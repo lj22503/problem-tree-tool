@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  problem-tree-tool:
+    build: .
+    container_name: problem-tree-tool
+    ports:
+      - "8501:8501"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEBUG=${DEBUG:-False}
+      - DATA_DIR=/app/data
+    volumes:
+      # 持久化数据存储
+      - ./data:/app/data
+      # 可选：挂载配置文件
+      # - ./config:/app/config
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - problem-tree-network
+    # 资源限制
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1'
+    #       memory: 1G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 512M
+
+  # 可选：添加Nginx反向代理（如果需要HTTPS）
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: problem-tree-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - problem-tree-tool
+  #   networks:
+  #     - problem-tree-network
+  #   restart: unless-stopped
+
+networks:
+  problem-tree-network:
+    driver: bridge
