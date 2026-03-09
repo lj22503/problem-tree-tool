@@ -197,20 +197,16 @@ st.markdown("""
         border: none;
     }
 
-    /* 对话消息特定样式 */
+    /* 对话消息特定样式 - 简化以避免DOM操作错误 */
     [data-testid="stChatMessage"] {
         border-radius: 16px !important;
         padding: 1rem !important;
         margin: 0.5rem 0 !important;
-    }
-
-    [data-testid="stChatMessage"]:nth-child(odd) {
         background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);
     }
 
-    [data-testid="stChatMessage"]:nth-child(even) {
-        background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
-    }
+    /* 移除可能引起DOM错误的:nth-child选择器 */
+    /* 使用更稳定的样式替代 */
 </style>
 """, unsafe_allow_html=True)
 
@@ -220,7 +216,18 @@ if "current_session" not in st.session_state:
 if "sessions" not in st.session_state:
     st.session_state.sessions = list_sessions()
 if "ai_engine" not in st.session_state:
-    st.session_state.ai_engine = ProblemTreeAI(backend="deepseek")
+    try:
+        st.session_state.ai_engine = ProblemTreeAI(backend="deepseek")
+        st.session_state.ai_engine_initialized = True
+    except Exception as e:
+        st.session_state.ai_engine = None
+        st.session_state.ai_engine_initialized = False
+        st.session_state.ai_engine_error = str(e)
+
+# 检查AI引擎是否初始化成功
+if "ai_engine_initialized" in st.session_state and not st.session_state.ai_engine_initialized:
+    st.error(f"AI引擎初始化失败: {st.session_state.get('ai_engine_error', '未知错误')}")
+    st.info("请检查Streamlit Cloud的Secrets配置中是否设置了正确的API密钥")
 
 # 标题和描述
 st.title("🌳 灵光问题树")
@@ -274,26 +281,38 @@ if page == "新建会话":
         submitted = st.form_submit_button("开始分析")
 
         if submitted and problem.strip():
-            # 创建新会话
-            new_session = ProblemSession(
-                problem_statement=problem,
-                session_name=session_name if session_name else problem[:30],
-                ai_model=ai_model
-            )
-            st.session_state.current_session = new_session
-            st.session_state.sessions.append(new_session)
-            save_session(new_session)
+            # 检查AI引擎是否可用
+            if st.session_state.ai_engine is None:
+                st.error("AI引擎不可用，无法创建会话。请检查API密钥配置。")
+            else:
+                # 创建新会话
+                new_session = ProblemSession(
+                    problem_statement=problem,
+                    session_name=session_name if session_name else problem[:30],
+                    ai_model=ai_model
+                )
+                st.session_state.current_session = new_session
+                st.session_state.sessions.append(new_session)
+                save_session(new_session)
 
-            # 初始化AI引导
-            ai_response = st.session_state.ai_engine.start_session(
-                problem,
-                model=ai_model
-            )
-            new_session.add_message("assistant", ai_response)
-            save_session(new_session)
+                # 初始化AI引导
+                try:
+                    ai_response = st.session_state.ai_engine.start_session(
+                        problem,
+                        model=ai_model
+                    )
+                    new_session.add_message("assistant", ai_response)
+                    save_session(new_session)
 
-            st.success("会话创建成功！请切换到'当前会话'页面继续。")
-            st.rerun()
+                    st.success("会话创建成功！请切换到'当前会话'页面继续。")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"AI响应生成失败: {str(e)}")
+                    # 回滚：移除刚才创建的会话
+                    if new_session in st.session_state.sessions:
+                        st.session_state.sessions.remove(new_session)
+                    if st.session_state.current_session == new_session:
+                        st.session_state.current_session = None
         elif submitted:
             st.error("请输入问题描述")
 
@@ -333,44 +352,64 @@ elif page == "当前会话":
 
                 user_input = st.chat_input("请输入你的回答或思考...")
                 if user_input:
-                    # 添加用户消息
-                    session.add_message("user", user_input)
+                    # 检查AI引擎是否可用
+                    if st.session_state.ai_engine is None:
+                        st.error("AI引擎不可用，无法继续对话。请检查API密钥配置。")
+                        # 仍然添加用户消息，但无法获取AI响应
+                        session.add_message("user", user_input)
+                        save_session(session)
+                        st.rerun()
+                    else:
+                        # 添加用户消息
+                        session.add_message("user", user_input)
 
-                    # 获取AI响应
-                    with st.spinner("AI正在思考..."):
-                        ai_response = st.session_state.ai_engine.continue_session(
-                            [{"role": msg.role, "content": msg.content} for msg in session.messages],
-                            session.current_stage.value,
-                            model=session.ai_model
-                        )
-                        session.add_message("assistant", ai_response)
+                        # 获取AI响应
+                        try:
+                            with st.spinner("AI正在思考..."):
+                                ai_response = st.session_state.ai_engine.continue_session(
+                                    [{"role": msg.role, "content": msg.content} for msg in session.messages],
+                                    session.current_stage.value,
+                                    model=session.ai_model
+                                )
+                                session.add_message("assistant", ai_response)
 
-                    # 更新会话阶段
-                    session.update_stage()
-                    save_session(session)
+                            # 更新会话阶段
+                            session.update_stage()
+                            save_session(session)
 
-                    st.rerun()
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"AI响应生成失败: {str(e)}")
+                            save_session(session)
 
                 # 跳过当前问题按钮
                 col1, col2 = st.columns([3, 1])
                 with col2:
                     if st.button("跳过此问题", type="secondary", use_container_width=True):
-                        # 添加一个空的用户消息来推进阶段
-                        session.add_message("user", "[用户选择跳过此问题]")
+                        # 检查AI引擎是否可用
+                        if st.session_state.ai_engine is None:
+                            st.error("AI引擎不可用，无法跳过问题。请检查API密钥配置。")
+                        else:
+                            # 添加一个空的用户消息来推进阶段
+                            session.add_message("user", "[用户选择跳过此问题]")
 
-                        # 获取AI响应
-                        with st.spinner("AI正在思考..."):
-                            ai_response = st.session_state.ai_engine.continue_session(
-                                [{"role": msg.role, "content": msg.content} for msg in session.messages],
-                                session.current_stage.value,
-                                model=session.ai_model
-                            )
-                            session.add_message("assistant", ai_response)
+                            # 获取AI响应
+                            try:
+                                with st.spinner("AI正在思考..."):
+                                    ai_response = st.session_state.ai_engine.continue_session(
+                                        [{"role": msg.role, "content": msg.content} for msg in session.messages],
+                                        session.current_stage.value,
+                                        model=session.ai_model
+                                    )
+                                    session.add_message("assistant", ai_response)
 
-                        # 更新会话阶段
-                        session.update_stage()
-                        save_session(session)
-                        st.rerun()
+                                # 更新会话阶段
+                                session.update_stage()
+                                save_session(session)
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"AI响应生成失败: {str(e)}")
+                                save_session(session)
             else:
                 st.success("🎉 问题树构建完成！请到'导出报告'页面生成最终报告。")
 
@@ -448,22 +487,30 @@ elif page == "当前会话":
                     if i == current_index and stage.value != "已完成":
                         st.divider()
                         if st.button("跳过此问题", key=f"skip_{stage.value}", use_container_width=True, type="secondary"):
-                            # 添加一个空的用户消息来推进阶段
-                            session.add_message("user", "[用户选择跳过此问题]")
+                            # 检查AI引擎是否可用
+                            if st.session_state.ai_engine is None:
+                                st.error("AI引擎不可用，无法跳过问题。请检查API密钥配置。")
+                            else:
+                                # 添加一个空的用户消息来推进阶段
+                                session.add_message("user", "[用户选择跳过此问题]")
 
-                            # 获取AI响应
-                            with st.spinner("AI正在思考..."):
-                                ai_response = st.session_state.ai_engine.continue_session(
-                                    [{"role": msg.role, "content": msg.content} for msg in session.messages],
-                                    session.current_stage.value,
-                                    model=session.ai_model
-                                )
-                                session.add_message("assistant", ai_response)
+                                # 获取AI响应
+                                try:
+                                    with st.spinner("AI正在思考..."):
+                                        ai_response = st.session_state.ai_engine.continue_session(
+                                            [{"role": msg.role, "content": msg.content} for msg in session.messages],
+                                            session.current_stage.value,
+                                            model=session.ai_model
+                                        )
+                                        session.add_message("assistant", ai_response)
 
-                            # 更新会话阶段
-                            session.update_stage()
-                            save_session(session)
-                            st.rerun()
+                                    # 更新会话阶段
+                                    session.update_stage()
+                                    save_session(session)
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"AI响应生成失败: {str(e)}")
+                                    save_session(session)
 
             # 快速操作
             st.divider()
