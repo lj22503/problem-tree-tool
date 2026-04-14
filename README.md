@@ -2,6 +2,16 @@
 
 基于全景式问题解决树框架的 AI 引导问题拆解工具。支持两种分析模式，适配不同场景。
 
+## 🌐 在线体验
+
+**https://problem-tree-tool.vercel.app**
+
+无需安装，打开浏览器就能用。
+
+需要 AI API 密钥（Claude/OpenAI/DeepSeek）。
+
+---
+
 ## 🎯 两种分析模式
 
 ### 💬 多轮对话模式（适合个人教练）
@@ -26,10 +36,16 @@
 
 ## 快速开始
 
-### 方式一：在线版（最快）
-访问：https://problem-tree-tool.vercel.app
+### 方式一：在线版（最快）⭐
+
+访问：**https://problem-tree-tool.vercel.app**
+
+无需安装，打开浏览器就能用。
+
+需要 AI API 密钥。
 
 ### 方式二：本地版（推荐）
+
 ```bash
 # 克隆项目
 git clone https://github.com/lj22503/problem-tree-tool.git
@@ -42,22 +58,22 @@ pip install -r requirements.txt
 cp .env.example .env
 # 编辑 .env 文件，添加你的 API 密钥
 
-# 运行（多轮对话模式）
-streamlit run app.py
-
-# 运行（双模式 v2.0）
+# 运行（双模式版本，推荐）
 streamlit run app_v2.py
+
+# 运行（仅对话模式）
+streamlit run app.py
 ```
 
 ## 使用场景
 
-### 多轮对话模式适合：
+### 💬 多轮对话模式适合：
 - 个人成长问题（职业规划、习惯养成）
 - 复杂决策（创业方向、产品定位）
 - 需要深度思考的问题
 - 想要 AI 引导式启发
 
-### 问题瀑布模式适合：
+### 🌊 问题瀑布模式适合：
 - 快速分析（1-2 分钟出报告）
 - 结构化输出（直接可用）
 - 团队分享（完整框架）
@@ -107,19 +123,36 @@ streamlit run app_v2.py
 ...
 ```
 
+## 部署到 Vercel
+
+### 一键部署
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/lj22503/problem-tree-tool)
+
+### 手动部署
+
+```bash
+npm install -g vercel
+vercel login
+vercel --prod
+```
+
+详细部署指南请查看 [VERCEL_DEPLOY.md](VERCEL_DEPLOY.md)。
+
 ## 项目结构
 
 ```
 problem-tree-tool/
 ├── app.py                 # 多轮对话模式（v1.0）
-├── app_v2.py             # 双模式版本（v2.0）
+├── app_v2.py             # 双模式版本（v2.0）⭐
 ├── modules/
 │   ├── ai_module.py      # AI 集成
 │   ├── prompts_waterfall.py  # 瀑布模式提示词
 │   └── ...
 ├── articles/
 │   └── problem-tree-tool-article.md  # 公众号文章
-└── ...
+├── vercel.json           # Vercel 部署配置
+└── VERCEL_DEPLOY.md      # 部署指南
 ```
 
 ## 许可证
@@ -137,3 +170,4 @@ MIT
 - **GitHub**: https://github.com/lj22503/problem-tree-tool
 - **在线体验**: https://problem-tree-tool.vercel.app
 - **公众号文章**: [我把 2 年的问题拆解方法论，做成了一个 AI 工具](articles/problem-tree-tool-article.md)
+- **部署指南**: [VERCEL_DEPLOY.md](VERCEL_DEPLOY.md)
