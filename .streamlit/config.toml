@@ -1,6 +1,9 @@
+[server]
+headless = true
+port = 8501
+address = "0.0.0.0"
+enableCORS = false
+enableXsrfProtection = true
+
 [browser]
 gatherUsageStats = false
-
-# Streamlit Cloud使用默认端口8501，不要指定端口
-# [server]
-# port = 8501

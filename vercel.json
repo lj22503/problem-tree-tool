@@ -1,9 +1,8 @@
 {
   "buildCommand": "pip install -r requirements.txt",
-  "devCommand": "streamlit run app_v2.py --server.port 3000 --server.headless true",
+  "devCommand": "streamlit run app_v2.py --server.port 8501 --server.address 0.0.0.0",
   "installCommand": "pip install -r requirements.txt",
-  "outputDirectory": ".streamlit",
-  "framework": "streamlit",
+  "framework": null,
   "rewrites": [
     {
       "source": "/(.*)",
