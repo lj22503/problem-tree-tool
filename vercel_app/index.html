@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>灵光问题树 — 全景式问题解决框架</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── Design Tokens ─────────────────────────────────────── */
+:root {
+  --bg: #ffffff;
+  --bg-alt: #f6f5f4;
+  --text: rgba(0,0,0,0.9);
+  --text-secondary: #615d59;
+  --text-muted: #a39e98;
+  --accent: #0075de;
+  --accent-hover: #005bab;
+  --border: rgba(0,0,0,0.1);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --sidebar-w: 260px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+textarea, input {
+  font-family: var(--font);
+}
+
+/* ─── Layout ─────────────────────────────────────────────── */
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-brand {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-section {
+  padding: 16px 20px 8px;
+}
+
+.sidebar-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.backend-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.backend-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
+}
+
+.backend-btn:hover { background: var(--bg-alt); color: var(--text); }
+.backend-btn.active {
+  background: #e8f0fd;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.backend-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.backend-btn.active .backend-dot { background: var(--accent); }
+
+.session-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.12s;
+  margin-bottom: 2px;
+  gap: 8px;
+}
+
+.session-item:hover { background: var(--bg-alt); }
+.session-item.active { background: #e8f0fd; }
+
+.session-item-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.session-item-stage {
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.session-delete {
+  width: 20px; height: 20px;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.session-item:hover .session-delete { opacity: 1; }
+.session-delete:hover { background: #fee2e2; color: #dc2626; }
+
+.new-chat-btn {
+  margin: 12px 12px 8px;
+  padding: 9px;
+  background: var(--accent);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+.new-chat-btn:hover { background: var(--accent-hover); }
+
+/* Main content */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ─── Mode Tabs ─────────────────────────────────────────── */
+.mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 16px 24px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.mode-tab {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  transition: all 0.15s;
+  position: relative;
+  bottom: -1px;
+}
+
+.mode-tab:hover { color: var(--text); }
+
+.mode-tab.active {
+  color: var(--accent);
+  background: var(--bg);
+  border-color: var(--border);
+  border-bottom-color: var(--bg);
+}
+
+/* ─── Chat Area ─────────────────────────────────────────── */
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.msg {
+  display: flex;
+  gap: 12px;
+  max-width: 680px;
+  width: 100%;
+  animation: fadeIn 0.2s ease;
+}
+
+.msg.user { align-self: flex-end; flex-direction: row-reverse; }
+.msg.assistant { align-self: flex-start; }
+
+.msg-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.msg.user .msg-avatar { background: var(--accent); color: white; }
+.msg.assistant .msg-avatar { background: var(--bg-alt); border: 1px solid var(--border); }
+
+.msg-body {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+}
+
+.msg.user .msg-body {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.msg-body p { margin-bottom: 8px; }
+.msg-body p:last-child { margin-bottom: 0; }
+.msg-body strong { font-weight: 600; }
+.msg-body ul, .msg-body ol { padding-left: 20px; margin: 8px 0; }
+.msg-body li { margin-bottom: 4px; }
+.msg-body h1, .msg-body h2, .msg-body h3 {
+  font-weight: 600; margin: 12px 0 6px;
+}
+.msg-body h1 { font-size: 18px; }
+.msg-body h2 { font-size: 16px; }
+.msg-body h3 { font-size: 14px; }
+.msg-body code {
+  background: rgba(0,0,0,0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+.msg-body pre {
+  background: rgba(0,0,0,0.06);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.msg-body pre code { background: none; padding: 0; }
+
+/* Welcome state */
+.welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.welcome-icon { font-size: 48px; margin-bottom: 16px; }
+.welcome h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 10px;
+}
+.welcome p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  max-width: 480px;
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.welcome-problem-input {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.problem-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+  resize: none;
+  outline: none;
+  transition: border-color 0.15s;
+  line-height: 1.5;
+  min-height: 100px;
+}
+.problem-textarea:focus { border-color: var(--accent); }
+.problem-textarea::placeholder { color: var(--text-muted); }
+
+.start-btn {
+  padding: 10px 20px;
+  background: var(--accent);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+.start-btn:hover { background: var(--accent-hover); }
+.start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ─── Stage Progress ─────────────────────────────────────── */
+.stage-progress {
+  padding: 12px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stage-bar-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.stage-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.stage-step.done { color: #16a34a; }
+.stage-step.active { color: var(--accent); font-weight: 600; }
+
+.stage-step-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.stage-step.done .stage-step-dot { background: #16a34a; }
+.stage-step.active .stage-step-dot { background: var(--accent); }
+
+.stage-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.skip-btn {
+  padding: 6px 12px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.skip-btn:hover { background: var(--border); }
+
+.complete-btn {
+  padding: 6px 12px;
+  background: #16a34a;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  transition: background 0.15s;
+}
+.complete-btn:hover { background: #15803d; }
+
+/* ─── Chat Input ─────────────────────────────────────────── */
+.chat-input-area {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.chat-input-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  max-width: 720px;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  resize: none;
+  outline: none;
+  line-height: 1.5;
+  max-height: 160px;
+  overflow-y: auto;
+  transition: border-color 0.15s;
+}
+.chat-input:focus { border-color: var(--accent); }
+.chat-input::placeholder { color: var(--text-muted); }
+
+.send-btn {
+  width: 38px; height: 38px;
+  background: var(--accent);
+  color: white;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.send-btn:hover { background: var(--accent-hover); }
+.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Waterfall Mode ─────────────────────────────────────── */
+.waterfall-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.wf-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.wf-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.wf-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  resize: vertical;
+  outline: none;
+  line-height: 1.55;
+  min-height: 100px;
+  transition: border-color 0.15s;
+}
+.wf-input:focus { border-color: var(--accent); }
+.wf-input::placeholder { color: var(--text-muted); }
+
+.wf-context-input {
+  min-height: 72px;
+  margin-top: 8px;
+}
+
+.wf-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.wf-submit {
+  padding: 9px 20px;
+  background: var(--accent);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.wf-submit:hover { background: var(--accent-hover); }
+.wf-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.wf-loading {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex; align-items: center; gap: 8px;
+}
+
+.wf-result {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  background: var(--bg);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 720px;
+}
+
+.wf-result h1 { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+.wf-result h2 { font-size: 16px; font-weight: 600; margin: 16px 0 8px; }
+.wf-result h3 { font-size: 14px; font-weight: 600; margin: 12px 0 6px; }
+.wf-result ul, .wf-result ol { padding-left: 20px; }
+.wf-result li { margin-bottom: 4px; }
+
+/* ─── Toast ─────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+  .mode-tabs {
+    padding: 12px 16px 0;
+  }
+  .chat-messages {
+    padding: 16px;
+  }
+  .chat-input-area {
+    padding: 12px 16px;
+  }
+  .stage-progress {
+    padding: 10px 16px;
+    flex-wrap: wrap;
+  }
+  .welcome h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">🌳 灵光问题树</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">AI 后端</div>
+      <div class="backend-btns">
+        <button class="backend-btn active" data-backend="deepseek">
+          <span class="backend-dot"></span> DeepSeek（推荐）
+        </button>
+        <button class="backend-btn" data-backend="claude">
+          <span class="backend-dot"></span> Claude
+        </button>
+        <button class="backend-btn" data-backend="openai">
+          <span class="backend-dot"></span> OpenAI
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="flex:1; overflow:hidden; display:flex; flex-direction:column;">
+      <div class="sidebar-label">会话历史</div>
+      <div class="session-list" id="sessionList"></div>
+    </div>
+
+    <button class="new-chat-btn" id="newChatBtn">＋ 新建会话</button>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <!-- Mode Tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="dialog">💬 多轮对话</button>
+      <button class="mode-tab" data-mode="waterfall">🌊 问题瀑布</button>
+    </div>
+
+    <!-- Dialog Mode -->
+    <div class="chat-area" id="dialogArea">
+      <div class="welcome" id="welcomeState">
+        <div class="welcome-icon">🌳</div>
+        <h1>把你的困惑，变成清晰的行动</h1>
+        <p>基于七步闭环流程的 AI 问题拆解工具。输入你的问题，AI 逐步引导你找到核心、制定方案、规划路径。</p>
+        <div class="welcome-problem-input">
+          <textarea class="problem-textarea" id="problemInput" placeholder="例如：我的产品用户留存率一直在跌，怎么办？"></textarea>
+          <button class="start-btn" id="startBtn">🚀 开始分析</button>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages" style="display:none;"></div>
+
+      <div class="stage-progress" id="stageProgress" style="display:none;">
+        <div class="stage-bar-wrap" id="stageBar"></div>
+        <div class="stage-actions">
+          <button class="skip-btn" id="skipBtn">跳过阶段</button>
+          <button class="complete-btn" id="completeBtn">完成分析</button>
+        </div>
+      </div>
+
+      <div class="chat-input-area" id="chatInputArea" style="display:none;">
+        <div class="chat-input-wrap">
+          <textarea class="chat-input" id="chatInput" placeholder="输入你的回答，AI 会继续引导..." rows="1"></textarea>
+          <button class="send-btn" id="sendBtn">↑</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Waterfall Mode -->
+    <div class="waterfall-area" id="waterfallArea" style="display:none;">
+      <div class="wf-card">
+        <h3>🎯 输入你要分析的问题</h3>
+        <textarea class="wf-input" id="wfQuestion" placeholder="例如：在 AI 时代，如何有效管理个人上下文？"></textarea>
+        <textarea class="wf-input wf-context-input" id="wfContext" placeholder="补充背景（可选）：例如，我每天处理大量信息，但很难整合... "></textarea>
+        <div class="wf-actions">
+          <button class="wf-submit" id="wfSubmit">🌊 生成完整分析</button>
+          <div class="wf-loading" id="wfLoading" style="display:none;">
+            <span>AI 思考中...</span>
+          </div>
+        </div>
+      </div>
+      <div class="wf-result" id="wfResult" style="display:none;"></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STAGES = [
+  "0-问题淬炼","1-问题定义","2-成功标准",
+  "3-挑战评估","4-方案生成","5-行动与迭代","已完成"
+];
+const STAGE_SHORT = {
+  "0-问题淬炼":"淬炼","1-问题定义":"定义","2-成功标准":"标准",
+  "3-挑战评估":"挑战","4-方案生成":"方案","5-行动与迭代":"行动","已完成":"完成"
+};
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let currentMode = 'dialog';
+let currentBackend = 'deepseek';
+let currentSessionId = null;
+let sessions = [];
+let isLoading = false;
+let autoResizeTextarea;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initBackendBtns();
+  initModeTabs();
+  initNewChat();
+  initDialog();
+  initWaterfall();
+  loadSessions();
+});
+
+// ─── Backend Selection ────────────────────────────────────────────────────────
+function initBackendBtns() {
+  document.querySelectorAll('.backend-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.backend-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentBackend = btn.dataset.backend;
+    });
+  });
+}
+
+// ─── Mode Tabs ────────────────────────────────────────────────────────────────
+function initModeTabs() {
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentMode = tab.dataset.mode;
+      document.getElementById('dialogArea').style.display = currentMode === 'dialog' ? 'flex' : 'none';
+      document.getElementById('waterfallArea').style.display = currentMode === 'waterfall' ? 'flex' : 'none';
+      if (currentMode === 'waterfall') {
+        document.getElementById('wfQuestion').focus();
+      }
+    });
+  });
+}
+
+// ─── New Chat ─────────────────────────────────────────────────────────────────
+function initNewChat() {
+  document.getElementById('newChatBtn').addEventListener('click', newChat);
+}
+
+function newChat() {
+  currentSessionId = null;
+  document.getElementById('welcomeState').style.display = '';
+  document.getElementById('chatMessages').style.display = '';
+  document.getElementById('chatMessages').innerHTML = '';
+  document.getElementById('chatMessages').style.display = 'none';
+  document.getElementById('stageProgress').style.display = 'none';
+  document.getElementById('chatInputArea').style.display = 'none';
+  document.getElementById('problemInput').value = '';
+  document.getElementById('chatInput').value = '';
+  document.getElementById('problemInput').focus();
+  updateSessionListActive();
+}
+
+// ─── Dialog ──────────────────────────────────────────────────────────────────
+function initDialog() {
+  const startBtn = document.getElementById('startBtn');
+  const problemInput = document.getElementById('problemInput');
+  const chatInput = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const skipBtn = document.getElementById('skipBtn');
+  const completeBtn = document.getElementById('completeBtn');
+
+  problemInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      startBtn.click();
+    }
+  });
+
+  startBtn.addEventListener('click', startDialog);
+
+  autoResizeTextarea = el => {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  };
+
+  chatInput.addEventListener('input', () => autoResizeTextarea(chatInput));
+
+  chatInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+
+  sendBtn.addEventListener('click', sendMessage);
+  skipBtn.addEventListener('click', () => sendMessage(true));
+  completeBtn.addEventListener('click', completeSession);
+}
+
+async function startDialog() {
+  const problem = document.getElementById('problemInput').value.trim();
+  if (!problem) { showToast('请输入问题'); return; }
+
+  setLoading(true, '🚀 启动会话...');
+  try {
+    const res = await fetch('/api/sessions', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ problem, backend: currentBackend }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || '创建会话失败');
+
+    currentSessionId = data.session_id;
+    const session = data.session;
+
+    document.getElementById('welcomeState').style.display = 'none';
+    document.getElementById('chatMessages').style.display = '';
+    document.getElementById('chatMessages').innerHTML = '';
+    document.getElementById('stageProgress').style.display = '';
+    document.getElementById('chatInputArea').style.display = '';
+
+    // Render messages
+    session.messages.forEach(m => renderMessage(m.role, m.content));
+
+    updateStageBar(session.current_stage);
+    updateSessionList();
+    autoScroll();
+  } catch (err) {
+    showToast(err.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function sendMessage(skipStage = false) {
+  if (isLoading) return;
+  const chatInput = document.getElementById('chatInput');
+  const content = skipStage ? '' : chatInput.value.trim();
+  if (!skipStage && !content) { showToast('请输入内容'); return; }
+
+  if (!skipStage) {
+    renderMessage('user', content);
+    chatInput.value = '';
+    autoResizeTextarea(chatInput);
+  }
+
+  setLoading(true, '🤔 AI 思考中...');
+  try {
+    const res = await fetch(`/api/sessions/${currentSessionId}/messages`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ content, skip_stage: skipStage }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || '发送失败');
+
+    const session = data.session;
+
+    // Find the new assistant message(s)
+    const oldCount = document.querySelectorAll('.msg.assistant').length;
+    const newMsgs = session.messages.slice(oldCount);
+    newMsgs.forEach(m => {
+      if (m.role === 'assistant') renderMessage('assistant', m.content);
+    });
+
+    updateStageBar(session.current_stage);
+    updateSessionList();
+    autoScroll();
+
+    if (session.current_stage === '已完成') {
+      document.getElementById('chatInputArea').style.display = 'none';
+      document.getElementById('skipBtn').style.display = 'none';
+      document.getElementById('completeBtn').style.display = 'none';
+      showToast('🎉 分析完成！');
+    }
+  } catch (err) {
+    showToast(err.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function completeSession() {
+  if (!currentSessionId) return;
+  setLoading(true);
+  try {
+    const res = await fetch(`/api/sessions/${currentSessionId}/complete`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail);
+    const session = data.session;
+    const newMsgs = session.messages.slice(
+      document.querySelectorAll('.msg.assistant').length
+    );
+    newMsgs.forEach(m => {
+      if (m.role === 'assistant') renderMessage('assistant', m.content);
+    });
+    document.getElementById('chatInputArea').style.display = 'none';
+    document.getElementById('skipBtn').style.display = 'none';
+    document.getElementById('completeBtn').style.display = 'none';
+    updateStageBar('已完成');
+    updateSessionList();
+    autoScroll();
+    showToast('🎉 分析完成！');
+  } catch (err) {
+    showToast(err.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function renderMessage(role, content) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const avatar = role === 'user' ? '我' : '🌳';
+  div.innerHTML = `
+    <div class="msg-avatar">${avatar}</div>
+    <div class="msg-body">${renderMarkdown(content)}</div>
+  `;
+  container.appendChild(div);
+}
+
+function renderMarkdown(text) {
+  // Simple client-side markdown rendering
+  return text
+    .replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code>${escapeHtml(code)}</code></pre>`)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/^#{3}\s+(.+)$/gm, '<h3>$1</h3>')
+    .replace(/^#{2}\s+(.+)$/gm, '<h2>$1</h2>')
+    .replace(/^#{1}\s+(.+)$/gm, '<h1>$1</h1>')
+    .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ol>$1</ol>')
+    .replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function updateStageBar(currentStage) {
+  const bar = document.getElementById('stageBar');
+  const idx = STAGES.indexOf(currentStage);
+  bar.innerHTML = STAGES.map((s, i) => {
+    const cls = i < idx ? 'done' : i === idx ? 'active' : '';
+    return `<div class="stage-step ${cls}"><div class="stage-step-dot"></div>${STAGE_SHORT[s]}</div>`;
+  }).join('');
+}
+
+function autoScroll() {
+  const el = document.getElementById('chatMessages');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ─── Waterfall ───────────────────────────────────────────────────────────────
+function initWaterfall() {
+  document.getElementById('wfSubmit').addEventListener('click', submitWaterfall);
+}
+
+async function submitWaterfall() {
+  const question = document.getElementById('wfQuestion').value.trim();
+  const context = document.getElementById('wfContext').value.trim();
+  if (!question) { showToast('请输入问题'); return; }
+
+  const btn = document.getElementById('wfSubmit');
+  const loading = document.getElementById('wfLoading');
+  const result = document.getElementById('wfResult');
+
+  btn.disabled = true;
+  loading.style.display = 'flex';
+  result.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/waterfall', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        question,
+        context: context ? { 补充背景: context } : null,
+        backend: currentBackend,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || '生成失败');
+
+    result.innerHTML = renderMarkdown(data.result);
+    result.style.display = '';
+  } catch (err) {
+    showToast(err.message);
+  } finally {
+    btn.disabled = false;
+    loading.style.display = 'none';
+  }
+}
+
+// ─── Sessions Sidebar ─────────────────────────────────────────────────────────
+async function loadSessions() {
+  try {
+    const res = await fetch('/api/sessions');
+    if (!res.ok) return;
+    const data = await res.json();
+    sessions = data.sessions || [];
+    renderSessionList();
+  } catch {}
+}
+
+function renderSessionList() {
+  const list = document.getElementById('sessionList');
+  if (!sessions.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 4px">暂无会话记录</div>';
+    return;
+  }
+  list.innerHTML = sessions.map(s => `
+    <div class="session-item ${s.session_id === currentSessionId ? 'active' : ''}" data-id="${s.session_id}">
+      <span class="session-item-label">${escapeHtml(s.problem_statement.slice(0, 20))}${s.problem_statement.length > 20 ? '…' : ''}</span>
+      <span class="session-item-stage">${STAGE_SHORT[s.current_stage] || ''}</span>
+      <button class="session-delete" data-id="${s.session_id}" title="删除">×</button>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.session-item').forEach(item => {
+    item.addEventListener('click', e => {
+      if (e.target.classList.contains('session-delete')) {
+        e.stopPropagation();
+        deleteSession(e.target.dataset.id);
+      } else {
+        loadSession(item.dataset.id);
+      }
+    });
+  });
+}
+
+function updateSessionListActive() {
+  document.querySelectorAll('.session-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.id === currentSessionId);
+  });
+}
+
+async function loadSession(sessionId) {
+  if (isLoading) return;
+  setLoading(true);
+  try {
+    const res = await fetch(`/api/sessions/${sessionId}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail);
+
+    currentSessionId = sessionId;
+    const session = data.session;
+
+    document.getElementById('welcomeState').style.display = 'none';
+    document.getElementById('chatMessages').style.display = '';
+    document.getElementById('chatMessages').innerHTML = '';
+    document.getElementById('stageProgress').style.display = '';
+    document.getElementById('chatInputArea').style.display = session.current_stage === '已完成' ? 'none' : '';
+    document.getElementById('skipBtn').style.display = session.current_stage === '已完成' ? 'none' : '';
+    document.getElementById('completeBtn').style.display = session.current_stage === '已完成' ? 'none' : '';
+
+    session.messages.forEach(m => renderMessage(m.role, m.content));
+    updateStageBar(session.current_stage);
+    updateSessionListActive();
+    autoScroll();
+  } catch (err) {
+    showToast(err.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function deleteSession(sessionId) {
+  try {
+    await fetch(`/api/sessions/${sessionId}`, { method: 'DELETE' });
+    sessions = sessions.filter(s => s.session_id !== sessionId);
+    if (currentSessionId === sessionId) newChat();
+    renderSessionList();
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
+function updateSessionList() {
+  const idx = sessions.findIndex(s => s.session_id === currentSessionId);
+  if (idx >= 0 && currentSessionId) {
+    // refresh from server
+    loadSessions();
+  } else {
+    loadSessions();
+  }
+}
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+function setLoading(on, msg) {
+  isLoading = on;
+  const sendBtn = document.getElementById('sendBtn');
+  if (sendBtn) sendBtn.disabled = on;
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

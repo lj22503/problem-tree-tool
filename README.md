@@ -2,126 +2,99 @@
 
 基于全景式问题解决树框架的 AI 引导问题拆解工具。支持两种分析模式，适配不同场景。
 
-## 🌐 在线体验
+---
+
+## 🌐 在线体验（Vercel 部署）
 
 **https://problem-tree-tool.vercel.app**
 
-无需安装，打开浏览器就能用。
-
-需要 AI API 密钥（Claude/OpenAI/DeepSeek）。
+无需安装，打开浏览器就能用。在 Vercel Dashboard → Settings → Environment Variables 配置 API 密钥。
 
 ---
 
-## 🎯 两种分析模式
+## 两种分析模式
 
-### 💬 多轮对话模式（适合个人教练）
+### 💬 多轮对话模式（适合深度思考）
+
 - AI 逐步引导，七步闭环流程
-- 适合深度思考、需要启发的场景
-- 可中途修改方向，灵活调整
+- 适合需要启发的复杂问题
+- 可中途跳过或直接完成
 
-### 🌊 问题瀑布模式（适合快速分析）
-- 一次性生成完整分析框架
-- 包含：核心问题、目标设定、风险识别、解决方案、行动计划、多维度分析
-- 适合快速输出、结构化报告、直接可用
+### 🌊 问题瀑布模式（适合快速输出）
 
-## 功能特点
+- 一键生成完整分析框架
+- 包含核心问题、目标设定、风险识别、解决方案、行动计划
+- 适合直接可用
 
-- **双模式支持**: 对话模式 + 瀑布模式
-- **AI 引导问题拆解**: 基于七步闭环流程
-- **五大心智透镜**: 证据、视角、联系、猜想、相关
-- **两大洞察力标准**: 看得远（回路）、看得透（层级）
-- **会话历史管理**: 保存所有问题树会话
-- **多种导出格式**: Markdown、JSON，支持 PDF 转换
-- **多 AI 模型支持**: Claude、OpenAI、DeepSeek
+---
+
+## 项目结构
+
+```
+problem-tree-tool/
+├── streamlit_app/           # Streamlit 版（本地/Streamlit Cloud）
+│   ├── app.py              # 对话模式主应用
+│   └── app_v2.py           # 双模式主应用
+├── vercel_app/             # Vercel 版（FastAPI + 原生 HTML/JS）
+│   ├── api/index.py         # FastAPI Serverless Functions（所有 API 路由）
+│   ├── index.html           # 前端（原生 HTML/JS，无框架）
+│   └── requirements.txt     # Vercel 部署依赖
+├── core/                   # 共享核心逻辑
+│   ├── ai_core.py          # AI 后端（Claude/OpenAI/DeepSeek）
+│   ├── prompt_engine.py     # 提示词引擎
+│   ├── models_core.py       # 数据模型
+│   └── session_store.py     # 会话存储
+├── app.py                  # (旧) 对话模式主应用
+├── app_v2.py               # (旧) 双模式主应用
+├── modules/                # (旧) 原始模块
+├── vercel.json             # Vercel 部署配置
+└── requirements.txt        # 本地开发依赖
+```
+
+---
 
 ## 快速开始
 
-### 方式一：在线版（最快）⭐
+### Vercel 在线版（推荐）
 
-访问：**https://problem-tree-tool.vercel.app**
+1. Fork 此仓库
+2. Vercel 导入项目
+3. 配置环境变量：`ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `DEEPSEEK_API_KEY`
+4. Deploy
 
-无需安装，打开浏览器就能用。
+### 本地开发
 
-需要 AI API 密钥。
-
-### 方式二：本地版（推荐）
+#### Vercel 版本（FastAPI）
 
 ```bash
-# 克隆项目
-git clone https://github.com/lj22503/problem-tree-tool.git
-cd problem-tree-tool
+pip install -r vercel_app/requirements.txt
+./run_vercel.sh
+# 访问 http://localhost:8000
+```
 
-# 安装依赖
+#### Streamlit 版本
+
+```bash
 pip install -r requirements.txt
-
-# 配置 API 密钥
-cp .env.example .env
-# 编辑 .env 文件，添加你的 API 密钥
-
-# 运行（双模式版本，推荐）
-streamlit run app_v2.py
-
-# 运行（仅对话模式）
-streamlit run app.py
+streamlit run streamlit_app/app_v2.py
+# 访问 http://localhost:8501
 ```
 
-## 使用场景
+---
 
-### 💬 多轮对话模式适合：
-- 个人成长问题（职业规划、习惯养成）
-- 复杂决策（创业方向、产品定位）
-- 需要深度思考的问题
-- 想要 AI 引导式启发
+## Vercel 环境变量配置
 
-### 🌊 问题瀑布模式适合：
-- 快速分析（1-2 分钟出报告）
-- 结构化输出（直接可用）
-- 团队分享（完整框架）
-- 问题诊断（系统性分析）
+在 Vercel Dashboard → Settings → Environment Variables 添加：
 
-## 输出示例（瀑布模式）
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `ANTHROPIC_API_KEY` | Claude API 密钥 | `sk-ant-...` |
+| `OPENAI_API_KEY` | OpenAI API 密钥 | `sk-...` |
+| `DEEPSEEK_API_KEY` | DeepSeek API 密钥 | `sk-...` |
 
-```markdown
-# 思维树构建师
+至少配置一个即可使用。
 
-## 结构化问题分析
-
-### 🎯 核心问题提炼
-用户的核心问题是：...
-表面看是...，但本质是：...
-
-### 📋 问题范围界定
-...
-
-### 🏆 成功目标设定
-...
-
-### ⚠️ 风险挑战识别
-...
-
-### 💡 解决方案制定
-...
-
-### 🔄 行动计划规划
-...
-
-## 多维度思维分析
-
-### 🔍 事实依据
-...
-
-### 👁️ 多维视角
-...
-
-### 🔗 关联分析
-...
-
-### 🧠 合理推论
-...
-
-### 📊 重要性评估
-...
-```
+---
 
 ## 部署到 Vercel
 
@@ -137,37 +110,30 @@ vercel login
 vercel --prod
 ```
 
-详细部署指南请查看 [VERCEL_DEPLOY.md](VERCEL_DEPLOY.md)。
+---
 
-## 项目结构
+## 功能特点
 
-```
-problem-tree-tool/
-├── app.py                 # 多轮对话模式（v1.0）
-├── app_v2.py             # 双模式版本（v2.0）⭐
-├── modules/
-│   ├── ai_module.py      # AI 集成
-│   ├── prompts_waterfall.py  # 瀑布模式提示词
-│   └── ...
-├── articles/
-│   └── problem-tree-tool-article.md  # 公众号文章
-├── vercel.json           # Vercel 部署配置
-└── VERCEL_DEPLOY.md      # 部署指南
-```
+- **双模式支持**：对话模式 + 瀑布模式
+- **AI 引导问题拆解**：基于七步闭环流程
+- **五大心智透镜**：证据、视角、联系、猜想、相关
+- **会话历史管理**：侧边栏保存所有会话
+- **多 AI 模型支持**：Claude / OpenAI / DeepSeek，可随时切换
+- **会话导出**：Markdown 格式报告
+
+---
+
+## 七步闭环流程
+
+0. **问题淬炼** — 衍生和聚焦真问题
+1. **问题定义** — 精准结构化定义问题
+2. **成功标准** — 设定清晰可衡量的目标
+3. **挑战评估** — 识别障碍与风险
+4. **方案生成** — 创造并选择行动路径
+5. **行动与迭代** — 规划近期行动并建立复盘机制
+
+---
 
 ## 许可证
 
 MIT
-
-## 致谢
-
-- 基于"全景式问题解决树"框架
-- 使用 Streamlit 构建界面
-- Claude/OpenAI API 提供 AI 能力
-
-## 链接
-
-- **GitHub**: https://github.com/lj22503/problem-tree-tool
-- **在线体验**: https://problem-tree-tool.vercel.app
-- **公众号文章**: [我把 2 年的问题拆解方法论，做成了一个 AI 工具](articles/problem-tree-tool-article.md)
-- **部署指南**: [VERCEL_DEPLOY.md](VERCEL_DEPLOY.md)
