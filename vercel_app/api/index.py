@@ -8,9 +8,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from typing import Optional, Dict, Any
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from core import (
     ProblemSession,
@@ -27,6 +28,10 @@ from core import (
 # FastAPI app
 # ─────────────────────────────────────────────────────────────────────────────
 app = FastAPI(title="灵光问题树 API", version="2.0")
+
+@app.exception_handler(ValidationError)
+async def validation_handler(request: Request, exc: ValidationError):
+    return JSONResponse(status_code=422, content={"detail": exc.errors(), "body": str(exc)})
 
 app.add_middleware(
     CORSMiddleware,
