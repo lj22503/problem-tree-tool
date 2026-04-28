@@ -57,7 +57,6 @@ class CreateSessionReq(BaseModel):
 
 
 class SendMessageReq(BaseModel):
-    session_id: str
     content: str
     skip_stage: bool = False
 
