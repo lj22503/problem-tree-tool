@@ -847,7 +847,7 @@ async function startDialog() {
       body: JSON.stringify({ problem, backend: currentBackend }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || '创建会话失败');
+    if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
 
     currentSessionId = data.session_id;
     const session = data.session;
@@ -891,7 +891,10 @@ async function sendMessage(skipStage = false) {
       body: JSON.stringify({ content, skip_stage: skipStage }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || '发送失败');
+    if (!res.ok) {
+      const msg = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+      throw new Error(msg);
+    }
 
     const session = data.session;
 
@@ -925,7 +928,7 @@ async function completeSession() {
   try {
     const res = await fetch(`/api/sessions/${currentSessionId}/complete`, { method: 'POST' });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail);
+    if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
     const session = data.session;
     const newMsgs = session.messages.slice(
       document.querySelectorAll('.msg.assistant').length
@@ -1024,7 +1027,7 @@ async function submitWaterfall() {
       }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || '生成失败');
+    if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
 
     result.innerHTML = renderMarkdown(data.result);
     result.style.display = '';
@@ -1085,7 +1088,7 @@ async function loadSession(sessionId) {
   try {
     const res = await fetch(`/api/sessions/${sessionId}`);
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail);
+    if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
 
     currentSessionId = sessionId;
     const session = data.session;
