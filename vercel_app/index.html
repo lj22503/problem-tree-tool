@@ -1651,7 +1651,7 @@ function initDialog() {
     }
   });
 
-  sendBtn.addEventListener('click', sendMessage);
+  sendBtn.addEventListener('click', () => sendMessage(false));
   skipBtn.addEventListener('click', () => sendMessage(true));
   completeBtn.addEventListener('click', completeSession);
 }
