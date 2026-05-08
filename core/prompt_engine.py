@@ -190,7 +190,10 @@ WATERFALL_TEMPLATE = """# 思维树构建师
 [基于证据的推断]
 
 ### 📊 重要性评估
-[评估各要素的重要程度]"""
+[评估各要素的重要程度]
+
+[额外上下文]
+"""
 
 
 class WaterfallPromptEngine:
