@@ -140,6 +140,7 @@ def get_session(session_id: str):
 
 @app.post("/api/sessions/{session_id}/messages")
 def send_message(session_id: str, req: SendMessageReq, request: Request):
+    import logging; logging.warning(f"[send_message] body={req.__dict__}, headers={dict(request.headers)}")
     session = SessionStore.get(session_id)
     if not session:
         raise HTTPException(404, "会话不存在或已过期")
