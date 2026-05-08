@@ -1277,7 +1277,7 @@ textarea, input { font-family: var(--font); }
         <!-- Input area — immediately visible -->
         <div class="intro-input-wrap">
           <textarea class="intro-textarea" id="introProblemInput" placeholder="输入你的困惑……"></textarea>
-          <button class="intro-start-btn-large" id="introStartBtn">
+          <button class="intro-start-btn-large" id="introStartBtn" type="button">
             <span>→</span> 开始分析
           </button>
         </div>
@@ -1355,7 +1355,7 @@ textarea, input { font-family: var(--font); }
           </div>
           <div class="welcome-start-wrap">
             <textarea class="problem-textarea" id="problemInput" placeholder="输入你的困惑……" style="display:none;"></textarea>
-            <button class="start-btn" id="startBtn"><span>→</span> 开始分析</button>
+            <button class="start-btn" id="startBtn" type="button"><span>→</span> 开始分析</button>
           </div>
         </div>
       </div>
@@ -1365,15 +1365,15 @@ textarea, input { font-family: var(--font); }
       <div class="stage-progress" id="stageProgress" style="display:none;">
         <div class="stage-bar-wrap" id="stageBar"></div>
         <div class="stage-actions">
-          <button class="skip-btn" id="skipBtn">跳过阶段</button>
-          <button class="complete-btn" id="completeBtn">完成分析</button>
+          <button class="skip-btn" id="skipBtn" type="button">跳过阶段</button>
+          <button class="complete-btn" id="completeBtn" type="button">完成分析</button>
         </div>
       </div>
 
       <div class="chat-input-area" id="chatInputArea" style="display:none;">
         <div class="chat-input-wrap">
           <textarea class="chat-input" id="chatInput" placeholder="输入你的回答，AI 会继续引导..." rows="1"></textarea>
-          <button class="send-btn" id="sendBtn">↑</button>
+          <button class="send-btn" id="sendBtn" type="button">↑</button>
         </div>
       </div>
     </div>
