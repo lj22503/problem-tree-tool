@@ -277,16 +277,18 @@ textarea, input { font-family: var(--font); }
   letter-spacing: 1.2px;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
+  font-family: serif;
+  text-transform: none;
 }
 
 .conflict-headline {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.8px;
-  line-height: 1.25;
-  margin-bottom: 16px;
+  line-height: 1.3;
+  margin-bottom: 14px;
 }
 
 .conflict-highlight {
@@ -295,9 +297,43 @@ textarea, input { font-family: var(--font); }
 }
 
 .conflict-body {
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--text-secondary);
   line-height: 1.8;
+}
+
+/* ─── Origin Story ────────────────────────────────────────── */
+.origin-story {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  text-align: left;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  box-shadow: var(--shadow);
+}
+
+.origin-story-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.origin-story-text h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+
+.origin-story-text p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.65;
 }
 
 /* ─── Method Promise ─────────────────────────────────────── */
@@ -923,9 +959,11 @@ textarea, input { font-family: var(--font); }
 
           <!-- 叙事锚点 -->
           <div class="welcome-conflict">
-            <div class="conflict-eyebrow">游刃 · 源自《庄子》</div>
+            <div class="conflict-eyebrow">游刃 · 源自《庄子·养生主》</div>
             <h1 class="conflict-headline">
-              脑子里一团乱麻，<br />找不到一个<br /><span class="conflict-highlight">可以下刀的地方</span>
+              脑子里一团乱麻，<br />
+              找不到一个<br />
+              <span class="conflict-highlight">可以下刀的地方</span>
             </h1>
             <p class="conflict-body">
               不是你不够聪明——<br />
@@ -933,21 +971,19 @@ textarea, input { font-family: var(--font); }
             </p>
           </div>
 
-          <!-- 方法承诺 -->
-          <div class="method-promise">
-            <div class="method-promise-label">7步闭环</div>
-            <p class="method-promise-text">
-              淬炼问题 → 界定边界 → 设成功标准<br />
-              → 评估挑战 → 生成方案 → 规划行动 → 复盘迭代
-            </p>
-            <p class="method-promise-sub">
-              庖丁解牛，游刃有余。<br />
-              你不需要刀刀见骨，只需找准结构，复杂问题自会散开。
-            </p>
+          <!-- 庄子典故 -->
+          <div class="origin-story">
+            <div class="origin-story-icon">🔪</div>
+            <div class="origin-story-text">
+              <h3>庖丁解牛，游刃有余</h3>
+              <p>庖丁看见牛的结构，顺着纹理入刀，不硬碰硬骨节。<br />
+              做产品、做决策、做人——所有复杂的事，<br />
+              都是找到了结构，才游刃有余。</p>
+            </div>
           </div>
 
-          <!-- 场景卡片 -->
-          <div class="welcome-scenes-label">这些问题，都问有所解</div>
+          <!-- 试试这些问题 -->
+          <div class="welcome-scenes-label">试试这些问题</div>
           <div class="scene-cards">
             <div class="scene-card" data-example="年终总结不知道怎么写，感觉一年下来没什么可写的">
               <div class="scene-card-icon">📝</div>
@@ -981,9 +1017,22 @@ textarea, input { font-family: var(--font); }
             </div>
           </div>
 
+          <!-- 方法承诺 -->
+          <div class="method-promise">
+            <div class="method-promise-label">7步闭环</div>
+            <p class="method-promise-text">
+              淬炼问题 → 界定边界 → 设成功标准<br />
+              → 评估挑战 → 生成方案 → 规划行动 → 复盘迭代
+            </p>
+            <p class="method-promise-sub">
+              输入你的困惑，AI 像一位有经验的朋友，<br />
+              逐步引导你拆解本质、找到杠杆、落地行动。
+            </p>
+          </div>
+
           <!-- 输入区 -->
           <div class="welcome-input-wrap">
-            <textarea class="problem-textarea" id="problemInput" placeholder="输入你的困惑……例如：我的产品用户留存率一直在跌，怎么办？"></textarea>
+            <textarea class="problem-textarea" id="problemInput" placeholder="输入你的困惑……例如：想提涨工资但不知道怎么开口，感觉没底气"></textarea>
             <button class="start-btn" id="startBtn">
               <span>→</span> 开始分析
             </button>
