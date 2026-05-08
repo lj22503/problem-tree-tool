@@ -86,10 +86,17 @@ def health():
     }
 
 
+def _get_user_key(req: Request) -> Optional[str]:
+    """从请求头获取用户传入的 API Key。"""
+    return req.headers.get("x-api-key") or None
+
+
 # ── 对话模式 ───────────────────────────────────────────────────────────────
 
 @app.post("/api/sessions")
-def create_session(req: CreateSessionReq):
+def create_session(req: CreateSessionReq, request: Request):
+    user_key = _get_user_key(request)
+
     session = ProblemSession(
         problem_statement=req.problem,
         backend=req.backend,
@@ -111,6 +118,7 @@ def create_session(req: CreateSessionReq):
                 ],
                 max_tokens=2000,
                 model=session.ai_model,
+                api_key=user_key,
             )
             session.add_message("assistant", resp)
         except Exception:
@@ -131,7 +139,7 @@ def get_session(session_id: str):
 
 
 @app.post("/api/sessions/{session_id}/messages")
-def send_message(session_id: str, req: SendMessageReq):
+def send_message(session_id: str, req: SendMessageReq, request: Request):
     session = SessionStore.get(session_id)
     if not session:
         raise HTTPException(404, "会话不存在或已过期")
@@ -143,6 +151,7 @@ def send_message(session_id: str, req: SendMessageReq):
     if req.skip_stage:
         session.advance_stage()
 
+    user_key = _get_user_key(request)
     backend = _make_backend(session.backend, session.ai_model)
     stage_prompt = _prompt_engine.get_stage_prompt(session.current_stage.value)
 
@@ -152,7 +161,7 @@ def send_message(session_id: str, req: SendMessageReq):
             for m in session.messages:
                 messages_for_ai.append({"role": m.role, "content": m.content})
             messages_for_ai.append({"role": "system", "content": stage_prompt})
-            resp = backend.generate(messages_for_ai, max_tokens=2000, model=session.ai_model)
+            resp = backend.generate(messages_for_ai, max_tokens=2000, model=session.ai_model, api_key=user_key)
             session.add_message("assistant", resp)
         except Exception as e:
             session.add_message("assistant", f"抱歉，AI 响应失败: {str(e)}")
@@ -202,7 +211,8 @@ def list_sessions():
 # ── 瀑布模式 ───────────────────────────────────────────────────────────────
 
 @app.post("/api/waterfall")
-def waterfall(req: WaterfallReq):
+def waterfall(req: WaterfallReq, request: Request):
+    user_key = _get_user_key(request)
     backend = _make_backend(req.backend, req.model or _BACKEND_DEFAULT_MODEL.get(req.backend))
     if not backend:
         raise HTTPException(503, "AI 后端未配置或密钥无效")
@@ -215,6 +225,7 @@ def waterfall(req: WaterfallReq):
             max_tokens=6000,
             temperature=0.7,
             model=req.model,
+            api_key=user_key,
         )
         return {"result": result, "question": req.question}
     except Exception as e:

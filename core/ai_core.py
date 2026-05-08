@@ -40,7 +40,8 @@ def _get_key(env_name: str, secrets_name: Optional[str] = None) -> Optional[str]
 class AIBackend(ABC):
     @abstractmethod
     def generate(self, messages: List[Dict[str, str]], *, max_tokens: int = 4000,
-                 temperature: float = 0.7, model: Optional[str] = None) -> str:
+                 temperature: float = 0.7, model: Optional[str] = None,
+                 api_key: Optional[str] = None) -> str:
         pass
 
     @abstractmethod
@@ -96,9 +97,12 @@ class OpenAIBackend(AIBackend):
         self.client = openai.OpenAI(api_key=self.api_key)
 
     def generate(self, messages: List[Dict[str, str]], *, max_tokens: int = 4000,
-                 temperature: float = 0.7, model: Optional[str] = None) -> str:
+                 temperature: float = 0.7, model: Optional[str] = None,
+                 api_key: Optional[str] = None) -> str:
         model = model or "gpt-4o"
-        resp = self.client.chat.completions.create(
+        effective_key = api_key or self.api_key
+        client = openai.OpenAI(api_key=effective_key)
+        resp = client.chat.completions.create(
             model=model,
             messages=messages,
             max_tokens=max_tokens,
@@ -126,9 +130,12 @@ class DeepSeekBackend(AIBackend):
         )
 
     def generate(self, messages: List[Dict[str, str]], *, max_tokens: int = 4000,
-                 temperature: float = 0.7, model: Optional[str] = None) -> str:
+                 temperature: float = 0.7, model: Optional[str] = None,
+                 api_key: Optional[str] = None) -> str:
         model = model or "deepseek-chat"
-        resp = self.client.chat.completions.create(
+        effective_key = api_key or self.api_key
+        client = openai.OpenAI(api_key=effective_key, base_url="https://api.deepseek.com")
+        resp = client.chat.completions.create(
             model=model,
             messages=messages,
             max_tokens=max_tokens,
