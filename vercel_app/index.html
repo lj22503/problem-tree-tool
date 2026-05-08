@@ -1521,6 +1521,10 @@ function startFromIntro() {
     document.getElementById('stageProgress').style.display = 'none';
     document.getElementById('chatInputArea').style.display = 'none';
     document.getElementById('chatInput').value = '';
+    // If user typed a problem in the intro textarea, auto-start the dialog
+    if (document.getElementById('problemInput').value.trim()) {
+      setTimeout(() => document.getElementById('startBtn').click(), 50);
+    }
   } else {
     document.getElementById('waterfallArea').style.display = 'flex';
   }
