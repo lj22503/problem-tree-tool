@@ -1852,10 +1852,9 @@ function autoScroll() {
 function initWaterfall() {
   document.getElementById('wfSubmit').addEventListener('click', submitWaterfall);
   document.getElementById('wfExportBtn')?.addEventListener('click', () => {
-    const result = document.getElementById('wfResult');
-    if (!result) return;
+    if (!_lastWaterfallResult) return;
     const question = document.getElementById('wfQuestion').value.trim();
-    const md = `# 问题分析报告\n\n## 原始问题\n${question}\n\n---\n\n${result.innerText}`;
+    const md = `# 问题分析报告\n\n## 原始问题\n${question}\n\n---\n\n${_lastWaterfallResult}`;
     const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1866,6 +1865,8 @@ function initWaterfall() {
     showToast('报告已下载');
   });
 }
+
+let _lastWaterfallResult = '';
 
 async function submitWaterfall() {
   const question = document.getElementById('wfQuestion').value.trim();
@@ -1881,6 +1882,7 @@ async function submitWaterfall() {
   loading.style.display = 'flex';
   result.style.display = 'none';
   if (exportBtn) exportBtn.style.display = 'none';
+  _lastWaterfallResult = '';
 
   try {
     const res = await apiFetch('/api/waterfall', {
@@ -1895,6 +1897,7 @@ async function submitWaterfall() {
     if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
 
     result.innerHTML = renderMarkdown(data.result);
+    _lastWaterfallResult = data.result;
     result.style.display = '';
     // Add export button for waterfall
     const exportWf = document.getElementById('wfExportBtn');
