@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>问有所解 — 7步系统思考，让困惑变成行动方案</title>
+<title>游刃 · 问题拆解工具 — 把复杂问题，变成清晰行动</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -74,15 +74,19 @@ textarea, input { font-family: var(--font); }
 }
 
 .sidebar-brand-icon {
-  width: 28px;
-  height: 28px;
+  width: 28px; height: 28px;
   background: var(--gold);
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+  color: #1c1917; font-weight: 700;
+}
+
+.sidebar-tagline {
+  font-size: 10.5px;
+  color: var(--text-on-dark-muted);
+  margin-top: 3px;
+  letter-spacing: 0.3px;
 }
 
 .sidebar-section {
@@ -883,9 +887,10 @@ textarea, input { font-family: var(--font); }
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-brand">
-        <div class="sidebar-brand-icon">❷</div>
-        问有所解
+        <div class="sidebar-brand-icon">✦</div>
+        游刃
       </div>
+      <div class="sidebar-tagline">问题拆解 · 系统思考</div>
     </div>
 
     <div class="sidebar-section" style="flex:1; overflow:hidden; display:flex; flex-direction:column;">
@@ -916,64 +921,63 @@ textarea, input { font-family: var(--font); }
       <div class="welcome" id="welcomeState">
         <div class="welcome-inner">
 
-          <!-- 叙事锚点：痛点 -->
+          <!-- 叙事锚点 -->
           <div class="welcome-conflict">
-            <div class="conflict-eyebrow">大多数人的困境</div>
+            <div class="conflict-eyebrow">游刃 · 源自《庄子》</div>
             <h1 class="conflict-headline">
-              脑子里一团乱麻，<br />找不到一个可以<br /><span class="conflict-highlight">开始的地方</span>
+              脑子里一团乱麻，<br />找不到一个<br /><span class="conflict-highlight">可以下刀的地方</span>
             </h1>
             <p class="conflict-body">
-              问题越想越复杂，方向越看越模糊。<br />
-              不是你不够聪明——是缺一个把困惑<br />
-              变成清晰路径的系统。
+              不是你不够聪明——<br />
+              是缺一个把困惑拎起来的结构。
             </p>
           </div>
 
           <!-- 方法承诺 -->
           <div class="method-promise">
-            <div class="method-promise-label">问有所解 · 7步闭环</div>
+            <div class="method-promise-label">7步闭环</div>
             <p class="method-promise-text">
-              淬炼问题 → 界定边界 → 设成功标准 → 评估挑战<br />
-              → 生成方案 → 规划行动 → 复盘迭代
+              淬炼问题 → 界定边界 → 设成功标准<br />
+              → 评估挑战 → 生成方案 → 规划行动 → 复盘迭代
             </p>
             <p class="method-promise-sub">
-              输入你的困惑，AI 像一位资深顾问，逐步引导你<br />
-              拆解本质、找到杠杆、落地行动。
+              庖丁解牛，游刃有余。<br />
+              你不需要刀刀见骨，只需找准结构，复杂问题自会散开。
             </p>
           </div>
 
           <!-- 场景卡片 -->
-          <div class="welcome-scenes-label">这些问题，问有所解</div>
+          <div class="welcome-scenes-label">这些问题，都问有所解</div>
           <div class="scene-cards">
-            <div class="scene-card" data-example="我的产品用户留存率一直在跌，怎么办？">
-              <div class="scene-card-icon">📉</div>
-              <div class="scene-card-title">增长与留存</div>
-              <div class="scene-card-desc">用户留存在跌、增长停滞、转化率低……找到真正的流失原因，而不是治标不治本</div>
+            <div class="scene-card" data-example="年终总结不知道怎么写，感觉一年下来没什么可写的">
+              <div class="scene-card-icon">📝</div>
+              <div class="scene-card-title">年终/季度复盘</div>
+              <div class="scene-card-desc">觉得自己没成绩、找不到亮点、写出来干巴巴……把一年拆开看，其实做了很多事</div>
             </div>
-            <div class="scene-card" data-example="我不知道自己适合做什么工作，怎么办？">
-              <div class="scene-card-icon">🔭</div>
-              <div class="scene-card-title">职业方向</div>
-              <div class="scene-card-desc">能力、兴趣、价值不清晰，职业选择陷入纠结……从自我认知到方向确认，一步步来</div>
+            <div class="scene-card" data-example="想提涨工资，怎么跟老板开口？">
+              <div class="scene-card-icon">💬</div>
+              <div class="scene-card-title">开口谈薪资</div>
+              <div class="scene-card-desc">觉得自己贡献大但不敢说、不知道怎么铺垫、怕谈崩……准备充分了，底气自然来</div>
             </div>
-            <div class="scene-card" data-example="团队执行力差，任务总是延期，怎么解决？">
-              <div class="scene-card-icon">⏰</div>
-              <div class="scene-card-title">团队协作</div>
-              <div class="scene-card-desc">目标对齐难、责任边界模糊、执行总是打折扣……拆解障碍，建立真正的协作机制</div>
+            <div class="scene-card" data-example="不知道该考研还是工作，很迷茫">
+              <div class="scene-card-icon">🎓</div>
+              <div class="scene-card-title">毕业方向选择</div>
+              <div class="scene-card-desc">两个选择各有利弊、问谁都没用、越想越乱……把两个选项拆开比，答案会自己浮现</div>
             </div>
-            <div class="scene-card" data-example="项目风险太大，不知道该不该继续投入？">
-              <div class="scene-card-icon">⚖️</div>
-              <div class="scene-card-title">决策与风险</div>
-              <div class="scene-card-desc">机会成本、时间窗口、团队士气……在不确定中做出有底气的决定</div>
+            <div class="scene-card" data-example="想省钱但不知道从哪开始，每次存不下钱">
+              <div class="scene-card-icon">💰</div>
+              <div class="scene-card-title">理财与省钱</div>
+              <div class="scene-card-desc">不知道钱花哪了、想控制消费但总破功、觉得攒钱遥不可及……拆解消费结构，对症下药</div>
             </div>
-            <div class="scene-card" data-example="我在AI时代感到焦虑，不知道如何应对？">
-              <div class="scene-card-icon">🤖</div>
-              <div class="scene-card-title">时代焦虑</div>
-              <div class="scene-card-desc">技术迭代太快、怕被替代、不知道学什么……把模糊的焦虑变成具体的行动清单</div>
+            <div class="scene-card" data-example="和家人教育观念不一致，总是为孩子的事吵架">
+              <div class="scene-card-icon">🏠</div>
+              <div class="scene-card-title">家庭沟通</div>
+              <div class="scene-card-desc">观念不同、说了不听、争吵反复发生……找到分歧根源，不为情绪埋单</div>
             </div>
-            <div class="scene-card" data-example="如何向领导有效地汇报工作，争取资源？">
-              <div class="scene-card-icon">🎤</div>
-              <div class="scene-card-title">向上沟通</div>
-              <div class="scene-card-desc">汇报没重点、争取资源总是被拒、想法推不动……把你想说的变成对方想听的</div>
+            <div class="scene-card" data-example="觉得自己的人生没有方向，很焦虑怎么办">
+              <div class="scene-card-icon">🚶</div>
+              <div class="scene-card-title">方向感缺失</div>
+              <div class="scene-card-desc">不知道想要什么、对什么都没兴趣、觉得晚了来不及……方向不是想出来的，是拆出来的</div>
             </div>
           </div>
 
