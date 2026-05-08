@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>灵光问题树 — 全景式问题解决框架</title>
+<title>问有所解 — 7步系统思考，让困惑变成行动方案</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -261,40 +261,138 @@ textarea, input { font-family: var(--font); }
   text-align: center;
 }
 
-.welcome-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  background: var(--gold-light);
-  border-radius: 99px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent);
-  margin-bottom: 20px;
-}
-
-.welcome h1 {
-  font-size: 30px;
-  font-weight: 700;
-  letter-spacing: -0.8px;
-  color: var(--text);
-  margin-bottom: 12px;
-  line-height: 1.2;
-}
-
-.welcome-sub {
-  font-size: 15px;
-  color: var(--text-secondary);
+/* ─── Welcome — Conflict Narrative ───────────────────────── */
+.welcome-conflict {
+  text-align: center;
   margin-bottom: 32px;
-  line-height: 1.65;
 }
 
+.conflict-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.conflict-headline {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.8px;
+  line-height: 1.25;
+  margin-bottom: 16px;
+}
+
+.conflict-highlight {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.conflict-body {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+/* ─── Method Promise ─────────────────────────────────────── */
+.method-promise {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 28px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.method-promise-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent);
+  background: var(--gold-light);
+  padding: 3px 10px;
+  border-radius: 99px;
+  margin-bottom: 10px;
+}
+
+.method-promise-text {
+  font-size: 12.5px;
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 8px;
+  line-height: 1.8;
+}
+
+.method-promise-sub {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* ─── Scene Cards ────────────────────────────────────────── */
+.welcome-scenes-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.scene-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.scene-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-align: left;
+}
+.scene-card:hover {
+  border-color: var(--gold);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.scene-card-icon {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.scene-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 5px;
+  line-height: 1.3;
+}
+
+.scene-card-desc {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ─── Welcome Input ──────────────────────────────────────── */
 .welcome-input-wrap {
   display: flex;
   flex-direction: column;
   gap: 10px;
   text-align: left;
+  max-width: 560px;
+  margin: 0 auto;
 }
 
 .problem-textarea {
@@ -781,12 +879,12 @@ textarea, input { font-family: var(--font); }
 <body>
 <div class="app">
 
-  <!-- Sidebar -->
+    <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-brand">
-        <div class="sidebar-brand-icon">🌳</div>
-        灵光问题树
+        <div class="sidebar-brand-icon">❷</div>
+        问有所解
       </div>
     </div>
 
@@ -804,11 +902,11 @@ textarea, input { font-family: var(--font); }
     <!-- Mode Selector -->
     <div class="mode-selector">
       <button class="mode-btn active" data-mode="dialog">
-        💬 多轮对话
+        对话模式
         <span class="mode-desc">AI 逐步引导</span>
       </button>
       <button class="mode-btn" data-mode="waterfall">
-        ⚡ 快速分析
+        快速分析
         <span class="mode-desc">一次性完整报告</span>
       </button>
     </div>
@@ -817,37 +915,76 @@ textarea, input { font-family: var(--font); }
     <div class="chat-area" id="dialogArea">
       <div class="welcome" id="welcomeState">
         <div class="welcome-inner">
-          <div class="welcome-badge">✨ 七步闭环 · 全景式问题解决</div>
-          <h1>把你的困惑，<br />变成清晰的行动</h1>
-          <p class="welcome-sub">
-            输入你的真实问题，AI 像一位资深顾问一样，<br />
-            引导你一步步拆解本质、制定方案、规划路径。
-          </p>
+
+          <!-- 叙事锚点：痛点 -->
+          <div class="welcome-conflict">
+            <div class="conflict-eyebrow">大多数人的困境</div>
+            <h1 class="conflict-headline">
+              脑子里一团乱麻，<br />找不到一个可以<br /><span class="conflict-highlight">开始的地方</span>
+            </h1>
+            <p class="conflict-body">
+              问题越想越复杂，方向越看越模糊。<br />
+              不是你不够聪明——是缺一个把困惑<br />
+              变成清晰路径的系统。
+            </p>
+          </div>
+
+          <!-- 方法承诺 -->
+          <div class="method-promise">
+            <div class="method-promise-label">问有所解 · 7步闭环</div>
+            <p class="method-promise-text">
+              淬炼问题 → 界定边界 → 设成功标准 → 评估挑战<br />
+              → 生成方案 → 规划行动 → 复盘迭代
+            </p>
+            <p class="method-promise-sub">
+              输入你的困惑，AI 像一位资深顾问，逐步引导你<br />
+              拆解本质、找到杠杆、落地行动。
+            </p>
+          </div>
+
+          <!-- 场景卡片 -->
+          <div class="welcome-scenes-label">这些问题，问有所解</div>
+          <div class="scene-cards">
+            <div class="scene-card" data-example="我的产品用户留存率一直在跌，怎么办？">
+              <div class="scene-card-icon">📉</div>
+              <div class="scene-card-title">增长与留存</div>
+              <div class="scene-card-desc">用户留存在跌、增长停滞、转化率低……找到真正的流失原因，而不是治标不治本</div>
+            </div>
+            <div class="scene-card" data-example="我不知道自己适合做什么工作，怎么办？">
+              <div class="scene-card-icon">🔭</div>
+              <div class="scene-card-title">职业方向</div>
+              <div class="scene-card-desc">能力、兴趣、价值不清晰，职业选择陷入纠结……从自我认知到方向确认，一步步来</div>
+            </div>
+            <div class="scene-card" data-example="团队执行力差，任务总是延期，怎么解决？">
+              <div class="scene-card-icon">⏰</div>
+              <div class="scene-card-title">团队协作</div>
+              <div class="scene-card-desc">目标对齐难、责任边界模糊、执行总是打折扣……拆解障碍，建立真正的协作机制</div>
+            </div>
+            <div class="scene-card" data-example="项目风险太大，不知道该不该继续投入？">
+              <div class="scene-card-icon">⚖️</div>
+              <div class="scene-card-title">决策与风险</div>
+              <div class="scene-card-desc">机会成本、时间窗口、团队士气……在不确定中做出有底气的决定</div>
+            </div>
+            <div class="scene-card" data-example="我在AI时代感到焦虑，不知道如何应对？">
+              <div class="scene-card-icon">🤖</div>
+              <div class="scene-card-title">时代焦虑</div>
+              <div class="scene-card-desc">技术迭代太快、怕被替代、不知道学什么……把模糊的焦虑变成具体的行动清单</div>
+            </div>
+            <div class="scene-card" data-example="如何向领导有效地汇报工作，争取资源？">
+              <div class="scene-card-icon">🎤</div>
+              <div class="scene-card-title">向上沟通</div>
+              <div class="scene-card-desc">汇报没重点、争取资源总是被拒、想法推不动……把你想说的变成对方想听的</div>
+            </div>
+          </div>
+
+          <!-- 输入区 -->
           <div class="welcome-input-wrap">
-            <textarea class="problem-textarea" id="problemInput" placeholder="例如：我的产品用户留存率一直在跌，怎么办？"></textarea>
+            <textarea class="problem-textarea" id="problemInput" placeholder="输入你的困惑……例如：我的产品用户留存率一直在跌，怎么办？"></textarea>
             <button class="start-btn" id="startBtn">
-              <span>🚀</span> 开始分析
+              <span>→</span> 开始分析
             </button>
           </div>
 
-          <!-- Example cards -->
-          <div class="welcome-examples">
-            <div class="welcome-examples-label">试试这些问题</div>
-            <div class="example-cards">
-              <div class="example-card" data-example="我的产品用户留存率一直在跌，怎么办？">
-                <div class="example-card-title">📉 用户留存下跌</div>
-                <div class="example-card-desc">分析下滑根因，找到关键杠杆</div>
-              </div>
-              <div class="example-card" data-example="我不知道自己适合做什么工作，怎么办？">
-                <div class="example-card-title">🔭 职业方向迷茫</div>
-                <div class="example-card-desc">从能力、价值、兴趣多维拆解</div>
-              </div>
-              <div class="example-card" data-example="团队执行力差，任务总是延期，怎么解决？">
-                <div class="example-card-title">⏰ 执行力不足</div>
-                <div class="example-card-desc">识别障碍，建立协作机制</div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -936,9 +1073,9 @@ function initModeTabs() {
   });
 }
 
-// ─── Example Cards ─────────────────────────────────────────────────────────────
+// ─── Scene Cards ──────────────────────────────────────────────────────────────
 function initExamples() {
-  document.querySelectorAll('.example-card').forEach(card => {
+  document.querySelectorAll('.scene-card').forEach(card => {
     card.addEventListener('click', () => {
       const text = card.dataset.example;
       if (currentMode !== 'dialog') {
