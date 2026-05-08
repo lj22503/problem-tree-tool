@@ -1483,27 +1483,30 @@ function initIntroPage() {
   modeCardWaterfall.addEventListener('click', () => selectMode('waterfall'));
 
   introStartBtn.addEventListener('click', () => {
+    // Always save the problem text first, so it's preserved across the API Key modal
+    const problem = document.getElementById('introProblemInput').value.trim();
+    document.getElementById('problemInput').value = problem;
+
     const key = getApiKey();
     if (!key) {
       document.getElementById('apiKeyModal').classList.remove('hidden');
       return;
     }
-    // Pre-fill the dialog input if in dialog mode
-    const problem = document.getElementById('introProblemInput').value.trim();
-    document.getElementById('problemInput').value = problem;
     startFromIntro();
   });
 
   // Intro scenario items
   document.querySelectorAll('.intro-scenario-item').forEach(item => {
     item.addEventListener('click', () => {
+      const example = item.dataset.example || '';
+      // Always save first so it's preserved when modal opens
+      document.getElementById('introProblemInput').value = example;
+      document.getElementById('problemInput').value = example;
+
       if (!getApiKey()) {
         document.getElementById('apiKeyModal').classList.remove('hidden');
         return;
       }
-      const example = item.dataset.example;
-      document.getElementById('introProblemInput').value = example;
-      document.getElementById('problemInput').value = example;
       startFromIntro();
     });
   });
