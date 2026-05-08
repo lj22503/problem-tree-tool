@@ -265,41 +265,77 @@ textarea, input { font-family: var(--font); }
 .intro-mode-tag { font-size: 10.5px; padding: 2px 8px; border-radius: 99px; background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
 .intro-mode-card.selected .intro-mode-tag { background: var(--gold-light); color: var(--accent); border-color: transparent; }
 
-.intro-cta-row {
+.intro-input-wrap {
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  align-items: center;
-  justify-content: center;
+  margin-bottom: 16px;
 }
 
-.intro-start-btn {
-  padding: 12px 28px;
+.intro-textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 14.5px;
+  color: var(--text);
+  background: var(--bg);
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: var(--font);
+  line-height: 1.6;
+}
+.intro-textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,169,110,0.1); }
+.intro-textarea::placeholder { color: var(--text-muted); }
+
+.intro-start-btn-large {
+  padding: 13px 24px;
   background: var(--text);
   color: #fafaf9;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   transition: all 0.15s;
   box-shadow: var(--shadow);
+  cursor: pointer;
+  border: none;
 }
-.intro-start-btn:hover { background: #292524; transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+.intro-start-btn-large:hover { background: #292524; transform: translateY(-1px); box-shadow: var(--shadow-lg); }
 
-.intro-api-hint {
-  font-size: 12px;
-  color: var(--text-muted);
-  text-align: center;
-  margin-top: 12px;
+.intro-trial-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 32px;
+  padding: 0 2px;
 }
 
-.intro-api-hint a { color: var(--accent); text-decoration: none; font-weight: 500; cursor: pointer; }
-.intro-api-hint a:hover { text-decoration: underline; }
+.intro-trial-btn {
+  font-size: 12.5px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s;
+}
+.intro-trial-btn:hover { opacity: 0.8; text-decoration: underline; }
+
+.intro-api-link {
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.intro-api-link:hover { color: var(--text-secondary); }
 
 /* Scenario strips */
 .intro-scenarios {
@@ -1179,51 +1215,55 @@ textarea, input { font-family: var(--font); }
           </div>
         </div>
 
-        <!-- CTA row -->
-        <div class="intro-cta-row">
-          <button class="intro-start-btn" id="introStartBtn">
+        <!-- Input area — immediately visible -->
+        <div class="intro-input-wrap">
+          <textarea class="intro-textarea" id="introProblemInput" placeholder="输入你的困惑……"></textarea>
+          <button class="intro-start-btn-large" id="introStartBtn">
             <span>→</span> 开始分析
           </button>
         </div>
-        <div class="intro-api-hint">
-          使用即表示你拥有自己的
-          <a id="openApiKeyModal">DeepSeek API Key</a>
-          · <span id="freeTierNote">免费用户每日 3 次体验</span>
+
+        <!-- Trial + API hint -->
+        <div class="intro-trial-row">
+          <a class="intro-trial-btn" href="https://clawhub.ai/lj22503/problem-mapper" target="_blank">
+            ⚡ 在 ClawhHub 试用（无需 API Key）
+          </a>
+          <span class="intro-api-link" id="openApiKeyModal">已有 DeepSeek Key →</span>
         </div>
 
         <!-- Scenarios -->
         <div class="intro-scenarios">
-          <div class="intro-scenarios-label">试试这些问题</div>
+          <div class="intro-scenarios-label">谁在用游刃</div>
           <div class="intro-scenario-grid">
+            <div class="intro-scenario-item" data-example="我要不要做这个AI产品？">
+              <div class="intro-scenario-icon">🚀</div>
+              <div class="intro-scenario-title">创业者 / 独立开发者</div>
+              <div class="intro-scenario-desc">脑子里100个问题，不知道先解哪个——游刃就是你的外脑</div>
+            </div>
+            <div class="intro-scenario-item" data-example="这个版本该做什么功能？">
+              <div class="intro-scenario-icon">📋</div>
+              <div class="intro-scenario-title">产品经理 / 运营</div>
+              <div class="intro-scenario-desc">需求太多，优先级排不清——游刃是"模糊变清晰"的加速器</div>
+            </div>
+            <div class="intro-scenario-item" data-example="35岁，想从传统行业转AI">
+              <div class="intro-scenario-icon">🎯</div>
+              <div class="intro-scenario-title">职场转型 / 职业规划</div>
+              <div class="intro-scenario-desc">想转行但不知道转什么、怎么转——游刃帮你系统拆解决策</div>
+            </div>
+            <div class="intro-scenario-item" data-example="AI时代，个人IP怎么做？">
+              <div class="intro-scenario-icon">✍️</div>
+              <div class="intro-scenario-title">内容创作者 / 自媒体</div>
+              <div class="intro-scenario-desc">选题枯竭，不知道写什么——好问题才有好内容</div>
+            </div>
+            <div class="intro-scenario-item" data-example="区块链+供应链，有什么研究价值？">
+              <div class="intro-scenario-icon">🔬</div>
+              <div class="intro-scenario-title">学生 / 研究者</div>
+              <div class="intro-scenario-desc">论文选题、研究方向不明确——游刃帮你找到研究缺口</div>
+            </div>
             <div class="intro-scenario-item" data-example="年终总结不知道怎么写，感觉一年下来没什么可写的">
               <div class="intro-scenario-icon">📝</div>
-              <div class="intro-scenario-title">年终/季度复盘</div>
-              <div class="intro-scenario-desc">觉得自己没成绩、找不到亮点、写出来干巴巴</div>
-            </div>
-            <div class="intro-scenario-item" data-example="想提涨工资，怎么跟老板开口？">
-              <div class="intro-scenario-icon">💬</div>
-              <div class="intro-scenario-title">开口谈薪资</div>
-              <div class="intro-scenario-desc">觉得自己贡献大但不敢说、不知道怎么铺垫、怕谈崩</div>
-            </div>
-            <div class="intro-scenario-item" data-example="不知道该考研还是工作，很迷茫">
-              <div class="intro-scenario-icon">🎓</div>
-              <div class="intro-scenario-title">毕业方向选择</div>
-              <div class="intro-scenario-desc">两个选择各有利弊、问谁都没用、越想越乱</div>
-            </div>
-            <div class="intro-scenario-item" data-example="想省钱但不知道从哪开始，每次存不下钱">
-              <div class="intro-scenario-icon">💰</div>
-              <div class="intro-scenario-title">理财与省钱</div>
-              <div class="intro-scenario-desc">不知道钱花哪了、想控制消费但总破功</div>
-            </div>
-            <div class="intro-scenario-item" data-example="和家人教育观念不一致，总是为孩子的事吵架">
-              <div class="intro-scenario-icon">🏠</div>
-              <div class="intro-scenario-title">家庭沟通</div>
-              <div class="intro-scenario-desc">观念不同、说了不听、争吵反复发生</div>
-            </div>
-            <div class="intro-scenario-item" data-example="觉得自己的人生没有方向，很焦虑怎么办">
-              <div class="intro-scenario-icon">🚶</div>
-              <div class="intro-scenario-title">方向感缺失</div>
-              <div class="intro-scenario-desc">不知道想要什么、对什么都没兴趣、觉得晚了来不及</div>
+              <div class="intro-scenario-title">年终复盘 / 日常反思</div>
+              <div class="intro-scenario-desc">觉得自己没成绩、找不到亮点——把一年拆开看，其实做了很多事</div>
             </div>
           </div>
         </div>
@@ -1448,17 +1488,21 @@ function initIntroPage() {
       document.getElementById('apiKeyModal').classList.remove('hidden');
       return;
     }
+    // Pre-fill the dialog input if in dialog mode
+    const problem = document.getElementById('introProblemInput').value.trim();
+    document.getElementById('problemInput').value = problem;
     startFromIntro();
   });
 
   // Intro scenario items
   document.querySelectorAll('.intro-scenario-item').forEach(item => {
     item.addEventListener('click', () => {
-      const example = item.dataset.example;
       if (!getApiKey()) {
         document.getElementById('apiKeyModal').classList.remove('hidden');
         return;
       }
+      const example = item.dataset.example;
+      document.getElementById('introProblemInput').value = example;
       document.getElementById('problemInput').value = example;
       startFromIntro();
     });
