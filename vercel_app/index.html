@@ -1367,6 +1367,7 @@ textarea, input { font-family: var(--font); }
         <div class="stage-actions">
           <button class="skip-btn" id="skipBtn" type="button">跳过阶段</button>
           <button class="complete-btn" id="completeBtn" type="button">完成分析</button>
+          <button class="skip-btn" id="exportBtn" type="button" style="display:none;">📥 导出报告</button>
         </div>
       </div>
 
@@ -1391,6 +1392,7 @@ textarea, input { font-family: var(--font); }
         <div class="wf-actions">
           <button class="wf-submit" id="wfSubmit">⚡ 生成完整分析</button>
           <div class="wf-loading" id="wfLoading" style="display:none;"><span>AI 思考中...</span></div>
+          <button class="wf-submit" id="wfExportBtn" style="display:none;background:#16a34a;" type="button">📥 导出报告</button>
         </div>
       </div>
       <div class="wf-result" id="wfResult" style="display:none;"></div>
@@ -1659,6 +1661,26 @@ function initDialog() {
   sendBtn.addEventListener('click', () => sendMessage(false));
   skipBtn.addEventListener('click', () => sendMessage(true));
   completeBtn.addEventListener('click', completeSession);
+  document.getElementById('exportBtn').addEventListener('click', exportReport);
+}
+
+async function exportReport() {
+  if (!currentSessionId) return;
+  try {
+    const res = await apiFetch(`/api/sessions/${currentSessionId}/report`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+    const blob = new Blob([data.report], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `问题树_报告_${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('报告已下载');
+  } catch (err) {
+    showToast('导出失败: ' + err.message);
+  }
 }
 
 async function startDialog() {
@@ -1735,6 +1757,7 @@ async function sendMessage(skipStage = false) {
       document.getElementById('chatInputArea').style.display = 'none';
       document.getElementById('skipBtn').style.display = 'none';
       document.getElementById('completeBtn').style.display = 'none';
+      document.getElementById('exportBtn').style.display = '';
       showToast('🎉 分析完成！');
     }
   } catch (err) {
@@ -1761,6 +1784,7 @@ async function completeSession() {
     document.getElementById('chatInputArea').style.display = 'none';
     document.getElementById('skipBtn').style.display = 'none';
     document.getElementById('completeBtn').style.display = 'none';
+    document.getElementById('exportBtn').style.display = '';
     updateStageBar('已完成');
     updateSessionList();
     autoScroll();
@@ -1808,8 +1832,10 @@ function escapeHtml(str) {
 function updateStageBar(currentStage) {
   const bar = document.getElementById('stageBar');
   const idx = STAGES.indexOf(currentStage);
+  // Guard: unknown stage → treat as first active
+  const safeIdx = idx >= 0 ? idx : 0;
   bar.innerHTML = STAGES.map((s, i) => {
-    const cls = i < idx ? 'done' : i === idx ? 'active' : '';
+    const cls = i < safeIdx ? 'done' : i === safeIdx ? 'active' : '';
     const conn = i < STAGES.length - 1
       ? `<div class="stage-connector"></div>`
       : '';
@@ -1825,6 +1851,20 @@ function autoScroll() {
 // ─── Waterfall ────────────────────────────────────────────────────────────────
 function initWaterfall() {
   document.getElementById('wfSubmit').addEventListener('click', submitWaterfall);
+  document.getElementById('wfExportBtn')?.addEventListener('click', () => {
+    const result = document.getElementById('wfResult');
+    if (!result) return;
+    const question = document.getElementById('wfQuestion').value.trim();
+    const md = `# 问题分析报告\n\n## 原始问题\n${question}\n\n---\n\n${result.innerText}`;
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `问题分析_${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('报告已下载');
+  });
 }
 
 async function submitWaterfall() {
@@ -1835,10 +1875,12 @@ async function submitWaterfall() {
   const btn = document.getElementById('wfSubmit');
   const loading = document.getElementById('wfLoading');
   const result = document.getElementById('wfResult');
+  const exportBtn = document.getElementById('wfExportBtn');
 
   btn.disabled = true;
   loading.style.display = 'flex';
   result.style.display = 'none';
+  if (exportBtn) exportBtn.style.display = 'none';
 
   try {
     const res = await apiFetch('/api/waterfall', {
@@ -1854,6 +1896,9 @@ async function submitWaterfall() {
 
     result.innerHTML = renderMarkdown(data.result);
     result.style.display = '';
+    // Add export button for waterfall
+    const exportWf = document.getElementById('wfExportBtn');
+    if (exportWf) exportWf.style.display = '';
   } catch (err) {
     showToast(err.message);
   } finally {
@@ -1923,6 +1968,7 @@ async function loadSession(sessionId) {
     document.getElementById('chatInputArea').style.display = session.current_stage === '已完成' ? 'none' : '';
     document.getElementById('skipBtn').style.display = session.current_stage === '已完成' ? 'none' : '';
     document.getElementById('completeBtn').style.display = session.current_stage === '已完成' ? 'none' : '';
+    document.getElementById('exportBtn').style.display = session.current_stage === '已完成' ? '' : 'none';
 
     session.messages.forEach(m => renderMessage(m.role, m.content));
     updateStageBar(session.current_stage);
