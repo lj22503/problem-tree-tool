@@ -1106,6 +1106,17 @@ textarea, input { font-family: var(--font); }
   margin-bottom: 14px;
 }
 
+.scenario-report-badge {
+  display: inline-block;
+  background: var(--gold-light);
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 99px;
+  margin-bottom: 6px;
+}
+
 .wf-result {
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1321,32 +1332,32 @@ textarea, input { font-family: var(--font); }
         <div class="intro-scenarios">
           <div class="intro-scenarios-label">谁在用游刃</div>
           <div class="intro-scenario-grid">
-            <div class="intro-scenario-item" data-example="我要不要做这个AI产品？">
+            <div class="intro-scenario-item" data-scenario="entrepreneur" data-example="我要不要做这个AI产品？">
               <div class="intro-scenario-icon">🚀</div>
               <div class="intro-scenario-title">创业者 / 独立开发者</div>
               <div class="intro-scenario-desc">脑子里100个问题，不知道先解哪个——游刃就是你的外脑</div>
             </div>
-            <div class="intro-scenario-item" data-example="这个版本该做什么功能？">
+            <div class="intro-scenario-item" data-scenario="pm" data-example="这个版本该做什么功能？">
               <div class="intro-scenario-icon">📋</div>
               <div class="intro-scenario-title">产品经理 / 运营</div>
               <div class="intro-scenario-desc">需求太多，优先级排不清——游刃是"模糊变清晰"的加速器</div>
             </div>
-            <div class="intro-scenario-item" data-example="35岁，想从传统行业转AI">
+            <div class="intro-scenario-item" data-scenario="career" data-example="35岁，想从传统行业转AI">
               <div class="intro-scenario-icon">🎯</div>
               <div class="intro-scenario-title">职场转型 / 职业规划</div>
               <div class="intro-scenario-desc">想转行但不知道转什么、怎么转——游刃帮你系统拆解决策</div>
             </div>
-            <div class="intro-scenario-item" data-example="AI时代，个人IP怎么做？">
+            <div class="intro-scenario-item" data-scenario="creator" data-example="AI时代，个人IP怎么做？">
               <div class="intro-scenario-icon">✍️</div>
               <div class="intro-scenario-title">内容创作者 / 自媒体</div>
               <div class="intro-scenario-desc">选题枯竭，不知道写什么——好问题才有好内容</div>
             </div>
-            <div class="intro-scenario-item" data-example="区块链+供应链，有什么研究价值？">
+            <div class="intro-scenario-item" data-scenario="researcher" data-example="区块链+供应链，有什么研究价值？">
               <div class="intro-scenario-icon">🔬</div>
               <div class="intro-scenario-title">学生 / 研究者</div>
               <div class="intro-scenario-desc">论文选题、研究方向不明确——游刃帮你找到研究缺口</div>
             </div>
-            <div class="intro-scenario-item" data-example="年终总结不知道怎么写，感觉一年下来没什么可写的">
+            <div class="intro-scenario-item" data-scenario="review" data-example="年终总结不知道怎么写，感觉一年下来没什么可写的">
               <div class="intro-scenario-icon">📝</div>
               <div class="intro-scenario-title">年终复盘 / 日常反思</div>
               <div class="intro-scenario-desc">觉得自己没成绩、找不到亮点——把一年拆开看，其实做了很多事</div>
@@ -1500,7 +1511,15 @@ async function apiFetch(url, opts = {}) {
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
+let scenarioReports = null;  // 预置场景报告
+
 document.addEventListener('DOMContentLoaded', () => {
+  // 预加载场景报告
+  fetch('scenario_reports.json')
+    .then(r => r.json())
+    .then(data => { scenarioReports = data; })
+    .catch(() => { scenarioReports = null; });
+
   initIntroPage();
   initApiKeyModal();
   initModeTabs();
@@ -1541,10 +1560,18 @@ function initIntroPage() {
   // Intro scenario items
   document.querySelectorAll('.intro-scenario-item').forEach(item => {
     item.addEventListener('click', () => {
+      const scenarioId = item.dataset.scenario;
       const example = item.dataset.example || '';
+
       // Always save first so it's preserved when modal opens
       document.getElementById('introProblemInput').value = example;
       document.getElementById('problemInput').value = example;
+
+      // 如果是 Waterfall 模式且有预置报告，直接展示
+      if (selectedIntroMode === 'waterfall' && scenarioReports && scenarioReports[scenarioId]) {
+        showScenarioReport(scenarioId, scenarioReports[scenarioId]);
+        return;
+      }
 
       if (!getApiKey()) {
         document.getElementById('apiKeyModal').classList.remove('hidden');
@@ -1553,6 +1580,52 @@ function initIntroPage() {
       startFromIntro();
     });
   });
+}
+
+// ─── 展示预置场景报告 ───────────────────────────────────────────────────────
+function showScenarioReport(scenarioId, data) {
+  document.getElementById('introPage').style.display = 'none';
+  document.getElementById('dialogArea').style.display = 'none';
+  document.getElementById('waterfallArea').style.display = 'flex';
+  document.getElementById('modeSelector').style.display = '';
+
+  // 更新问题输入框（保持一致）
+  document.getElementById('wfQuestion').value = data.question || '';
+
+  // 展示报告
+  const resultEl = document.getElementById('wfResult');
+  const reportHtml = renderMarkdown(data.report || '报告加载中...');
+  resultEl.innerHTML = `
+    <div class="scenario-report-header">
+      <div class="scenario-report-badge">示例报告</div>
+      <h2 style="margin:8px 0 4px;font-size:15px;">${data.question}</h2>
+      <p style="color:var(--text-muted);font-size:11px;margin:0;">由游刃·Map 深化模式生成</p>
+    </div>
+    <div class="scenario-report-body">${reportHtml}</div>
+  `;
+  resultEl.style.display = 'block';
+
+  // 设置导出变量（让原有导出handler可以复用）
+  _lastWaterfallResult = data.report || '';
+
+  // 显示导出按钮
+  document.getElementById('wfExportBtn').style.display = '';
+
+  // 隐藏输入区域和加载状态
+  document.getElementById('wfQuestion').parentElement.style.display = 'none';
+  document.getElementById('wfLoading').style.display = 'none';
+
+  // 切换顶部模式标签为 waterfall active
+  document.querySelectorAll('.mode-btn').forEach(t => {
+    t.classList.toggle('active', t.dataset.mode === 'waterfall');
+  });
+
+  // 禁止重新生成（预置报告不需要）
+  const submitBtn = document.getElementById('wfSubmit');
+  submitBtn.style.display = 'none';
+
+  // 滚动到报告
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function startFromIntro() {
@@ -1640,6 +1713,12 @@ function initModeTabs() {
       document.getElementById('dialogArea').style.display = currentMode === 'dialog' ? 'flex' : 'none';
       document.getElementById('waterfallArea').style.display = currentMode === 'waterfall' ? 'flex' : 'none';
       if (currentMode === 'waterfall') {
+        // 重置输入区域（从场景报告状态恢复）
+        document.getElementById('wfQuestion').parentElement.style.display = '';
+        document.getElementById('wfSubmit').style.display = '';
+        document.getElementById('wfLoading').style.display = 'none';
+        document.getElementById('wfResult').style.display = 'none';
+        document.getElementById('wfExportBtn').style.display = 'none';
         document.getElementById('wfQuestion').focus();
       }
     });
