@@ -10,6 +10,10 @@
       "src": "vercel_app/index.html",
       "use": "@vercel/static",
       "config": { "contentType": "text/html" }
+    },
+    {
+      "src": "vercel_app/scenario_reports.json",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
