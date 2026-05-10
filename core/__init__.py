@@ -11,6 +11,7 @@ from .ai_core import (
     create_backend,
     backend_supports_model,
     _BACKEND_DEFAULT_MODEL,
+    ConvergenceJudge,
 )
 from .prompt_engine import PromptEngine, WaterfallPromptEngine, IterativeWaterfallEngine
 from .models_core import Message, Stage, ProblemSession
@@ -27,8 +28,10 @@ __all__ = [
     "_BACKEND_DEFAULT_MODEL",
     "PromptEngine",
     "WaterfallPromptEngine",
+    "IterativeWaterfallEngine",
     "Message",
     "Stage",
     "ProblemSession",
     "SessionStore",
+    "ConvergenceJudge",
 ]

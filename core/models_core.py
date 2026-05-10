@@ -76,6 +76,8 @@ class ProblemSession:
     messages: List[Message] = field(default_factory=list)
     current_stage: Stage = Stage.PROBLEM_REFINEMENT
     session_id: str = field(default_factory=lambda: uuid.uuid4().hex[:8])
+    # 对话深化模式: "light"=轻量版(默认), "full"=完整版, None/False=不深化
+    dialog_iterative: str = "light"
 
     def __post_init__(self):
         if not self.session_name:
@@ -102,6 +104,7 @@ class ProblemSession:
             "session_name": self.session_name,
             "ai_model": self.ai_model,
             "backend": self.backend,
+            "dialog_iterative": self.dialog_iterative,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "messages": [m.to_dict() for m in self.messages],

@@ -22,8 +22,9 @@ from core import (
     WaterfallPromptEngine,
     get_available_backends,
     _BACKEND_DEFAULT_MODEL,
+    ConvergenceJudge,
 )
-from core.prompt_engine import IterativeWaterfallEngine
+from core.prompt_engine import IterativeWaterfallEngine, STAGE_PROMPTS
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FastAPI app
@@ -61,6 +62,8 @@ class CreateSessionReq(BaseModel):
     problem: str
     backend: str = "deepseek"
     model: Optional[str] = None
+    # 对话深化: "light"(默认轻量版) | "full"(完整版) | None/False(不深化)
+    dialog_iterative: Optional[str] = "light"
 
 
 class SendMessageReq(BaseModel):
@@ -100,10 +103,17 @@ def _get_user_key(req: Request) -> Optional[str]:
 def create_session(req: CreateSessionReq, request: Request):
     user_key = _get_user_key(request)
 
+    # 解析深化模式
+    iterative_val = req.dialog_iterative if req.dialog_iterative else None
+    # "light"/"full" 字符串 -> 直接用，其他 falsy -> "light" 默认
+    if iterative_val not in ("light", "full"):
+        iterative_val = "light"
+
     session = ProblemSession(
         problem_statement=req.problem,
         backend=req.backend,
         ai_model=req.model or _BACKEND_DEFAULT_MODEL.get(req.backend, "deepseek-chat"),
+        dialog_iterative=iterative_val,
     )
 
     stage_prompt = _prompt_engine.get_stage_prompt(
@@ -170,6 +180,40 @@ def send_message(session_id: str, req: SendMessageReq, request: Request):
             session.add_message("assistant", f"抱歉，AI 响应失败: {str(e)}")
     else:
         session.add_message("assistant", "⚠️ AI 后端未配置，请检查 API 密钥。")
+
+    # ── 对话深化迭代 ──────────────────────────────────────────────────────────
+    iterative_mode = getattr(session, "dialog_iterative", None)
+    if iterative_mode and backend:
+        stage_data = STAGE_PROMPTS.get(session.current_stage.value, {})
+        stage_name = stage_data.get("name", session.current_stage.value)
+        stage_guidance = stage_data.get("guidance", "")
+        judge = ConvergenceJudge()
+
+        # 轻量版：1次判断；完整版：最多3次
+        max_rounds = 1 if iterative_mode == "light" else 3
+        for _ in range(max_rounds):
+            last_response = session.messages[-1].content
+            judge_msgs = judge.build_judge_messages(stage_name, stage_guidance, last_response)
+            try:
+                judgment = backend.generate_response(judge_msgs, max_tokens=500, model=session.ai_model, api_key=user_key)
+            except Exception:
+                judgment = "GOOD"
+            if not judge.should_continue(judgment):
+                break
+            # 需要继续深挖
+            deepdive_prompt = judge.get_deepdive_prompt(stage_name, stage_guidance, last_response)
+            deepdive_msgs = [
+                {"role": "system", "content": _prompt_engine.get_system_prompt()},
+            ]
+            for m in session.messages:
+                deepdive_msgs.append({"role": m.role, "content": m.content})
+            deepdive_msgs.append({"role": "user", "content": deepdive_prompt})
+            try:
+                dive_resp = backend.generate_response(deepdive_msgs, max_tokens=1500, model=session.ai_model, api_key=user_key)
+                session.add_message("assistant", dive_resp)
+            except Exception:
+                pass
+    # ── 深化结束 ───────────────────────────────────────────────────────────────
 
     SessionStore.save(session)
     return {"session": session.to_dict()}

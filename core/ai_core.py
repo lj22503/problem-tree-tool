@@ -187,6 +187,77 @@ def get_available_backends() -> List[str]:
     return available
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# 收敛判断 — 对话阶段迭代深化
+# ─────────────────────────────────────────────────────────────────────────────
+JUDGE_SYSTEM_PROMPT = """你是一个严格的质量审查员。你的任务是对AI在一个问题解决阶段产出的回复进行质量评估，判断其是否足够深入、具体、可操作。
+
+评分标准（0-10分）：
+- 6分以下：回复过于笼统、抽象，缺乏具体细节或可操作性，需要继续深挖
+- 6-8分：有基础内容，但可以更深入、更具体
+- 8分以上：内容扎实，具体、可操作，无需继续
+
+判断标准（输出一个词）：
+- "CONVERGED"（收敛）：回复已经足够深入具体，主题明确，无需再深挖
+- "DIVERGE"（发散）：回复过于发散，没有聚焦核心问题
+- "SUPERFICIAL"（浅薄）：回复有方向但缺乏深度，需要具体化
+- "INCOMPLETE"（残缺）：回复有明显遗漏，重要维度没有覆盖
+- "GOOD"（良好）：有实质内容但还有深挖空间，可以继续"""
+
+
+JUDGE_USER_TEMPLATE = """阶段：{stage_name}
+阶段指导：{stage_guidance}
+AI 回复：
+---
+{response}
+---
+
+请评估：这个回复是否足够深入？如果要继续深挖，你建议从哪个方向切入？"""
+
+
+class ConvergenceJudge:
+    def __init__(self):
+        self.system_prompt = JUDGE_SYSTEM_PROMPT
+
+    def build_judge_messages(self, stage_name: str, stage_guidance: str, response: str):
+        return [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": JUDGE_USER_TEMPLATE.format(
+                stage_name=stage_name,
+                stage_guidance=stage_guidance,
+                response=response,
+            )},
+        ]
+
+    def parse_judgment(self, output: str) -> str:
+        output = output.strip().upper()
+        for keyword in ["CONVERGED", "DIVERGE", "SUPERFICIAL", "INCOMPLETE", "GOOD"]:
+            if keyword in output:
+                return keyword
+        return "GOOD"  # 默认认为良好
+
+    def should_continue(self, output: str) -> bool:
+        verdict = self.parse_judgment(output)
+        # CONVERGED = 停止，其他 = 继续
+        return verdict != "CONVERGED"
+
+    def get_deepdive_prompt(self, stage_name: str, stage_guidance: str, response: str) -> str:
+        return f"""你刚才在「{stage_name}」阶段的回复如下：
+
+---
+{response}
+---
+
+请针对这个回复中的【薄弱环节】进行深入分析。
+薄弱环节可能是：
+- 过于笼统的描述（需要具体例子）
+- 缺乏可操作性的建议（需要具体步骤）
+- 遗漏的重要维度（需要补充）
+- 表象描述（需要挖掘根本原因）
+
+请输出一段更深入的分析或追问，补充或深化原回复。"""
+
+
 def backend_supports_model(backend: str, model_name: str) -> bool:
     cls = _BACKEND_CLASSES.get(backend)
     if not cls:

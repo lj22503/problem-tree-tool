@@ -1099,6 +1099,13 @@ textarea, input { font-family: var(--font); }
   white-space: nowrap;
 }
 
+.dialog-iterative-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
 .wf-result {
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1375,6 +1382,16 @@ textarea, input { font-family: var(--font); }
           </div>
           <div class="welcome-start-wrap">
             <textarea class="problem-textarea" id="problemInput" placeholder="输入你的困惑……" style="display:none;"></textarea>
+            <div class="dialog-iterative-options">
+              <label class="wf-iterative-toggle">
+                <input type="checkbox" id="dlgIterativeLight" checked />
+                <span>🔍 轻量深化（每阶段多挖一次）</span>
+              </label>
+              <label class="wf-iterative-toggle">
+                <input type="checkbox" id="dlgIterativeFull" />
+                <span>🧠 完整深化（最多3轮，建议复杂问题用）</span>
+              </label>
+            </div>
             <button class="start-btn" id="startBtn" type="button"><span>→</span> 开始分析</button>
           </div>
         </div>
@@ -1711,11 +1728,15 @@ async function startDialog() {
   const problem = document.getElementById('problemInput').value.trim();
   if (!problem) { showToast('请输入问题'); return; }
 
+  // dialog_iterative: full if full-checkbox checked, else light (default)
+  const isFull = document.getElementById('dlgIterativeFull').checked;
+  const dialogIterative = isFull ? 'full' : 'light';
+
   setLoading(true, '🚀 启动会话...');
   try {
     const res = await apiFetch('/api/sessions', {
       method: 'POST',
-      body: JSON.stringify({ problem, backend: 'deepseek' }),
+      body: JSON.stringify({ problem, backend: 'deepseek', dialog_iterative: dialogIterative }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
