@@ -14,6 +14,10 @@
   ],
   "routes": [
     {
+      "src": "/scenario_reports.json",
+      "dest": "vercel_app/scenario_reports.json"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "vercel_app/api/index.py"
     },
