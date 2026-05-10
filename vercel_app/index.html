@@ -1283,7 +1283,7 @@ textarea, input { font-family: var(--font); }
 
         <!-- Two mode cards -->
         <div class="intro-modes">
-          <div class="intro-mode-card selected" data-mode="dialog" id="modeCardDialog">
+          <div class="intro-mode-card" data-mode="dialog" id="modeCardDialog">
             <div class="intro-mode-icon">🎯</div>
             <div class="intro-mode-name">有人带路</div>
             <div class="intro-mode-desc">
@@ -1297,7 +1297,7 @@ textarea, input { font-family: var(--font); }
             </div>
           </div>
 
-          <div class="intro-mode-card" data-mode="waterfall" id="modeCardWaterfall">
+          <div class="intro-mode-card selected" data-mode="waterfall" id="modeCardWaterfall">
             <div class="intro-mode-icon">🗺️</div>
             <div class="intro-mode-name">自己开图</div>
             <div class="intro-mode-desc">
@@ -1485,7 +1485,7 @@ let currentSessionId = null;
 let sessions = [];
 let isLoading = false;
 let autoResizeTextarea;
-let selectedIntroMode = 'dialog';
+let selectedIntroMode = 'waterfall';
 
 // ─── API Key ──────────────────────────────────────────────────────────────────
 const API_KEY_STORAGE = 'youxian_apikey';
@@ -1823,6 +1823,15 @@ async function startDialog() {
     currentSessionId = data.session_id;
     const session = data.session;
 
+    // 同步写入 localStorage（serverless 无持久存储）
+    try {
+      sessions = JSON.parse(localStorage.getItem(SESSIONS_STORAGE) || '[]');
+    } catch { sessions = []; }
+    const summary = { session_id: session.session_id, problem_statement: session.problem_statement, current_stage: session.current_stage };
+    sessions = sessions.filter(s => s.session_id !== session.session_id);
+    sessions.unshift(summary);
+    localStorage.setItem(SESSIONS_STORAGE, JSON.stringify(sessions));
+
     document.getElementById('welcomeState').style.display = 'none';
     document.getElementById('chatMessages').style.display = '';
     document.getElementById('chatMessages').innerHTML = '';
@@ -1831,7 +1840,7 @@ async function startDialog() {
 
     session.messages.forEach(m => renderMessage(m.role, m.content));
     updateStageBar(session.current_stage);
-    updateSessionList();
+    renderSessionList();
     autoScroll();
   } catch (err) {
     showToast(err.message);
@@ -1874,7 +1883,7 @@ async function sendMessage(skipStage = false) {
     });
 
     updateStageBar(session.current_stage);
-    updateSessionList();
+    upsertSessionInLocal(currentSessionId, session.problem_statement, session.current_stage);
     autoScroll();
 
     if (session.current_stage === '已完成') {
@@ -1910,7 +1919,7 @@ async function completeSession() {
     document.getElementById('completeBtn').style.display = 'none';
     document.getElementById('exportBtn').style.display = '';
     updateStageBar('已完成');
-    updateSessionList();
+    upsertSessionInLocal(currentSessionId, '', '已完成');
     autoScroll();
     showToast('🎉 分析完成！');
   } catch (err) {
@@ -2039,13 +2048,26 @@ async function submitWaterfall() {
 }
 
 // ─── Sessions ─────────────────────────────────────────────────────────────────
+const SESSIONS_STORAGE = 'youxian_sessions';
+
 async function loadSessions() {
   try {
+    // 优先从 localStorage 恢复（页面刷新后立即显示历史）
+    const cached = localStorage.getItem(SESSIONS_STORAGE);
+    if (cached) {
+      try { sessions = JSON.parse(cached); } catch { sessions = []; }
+      renderSessionList();
+    }
+    // 再从 API 更新最新数据（API 有持久 → 更新本地；API 空 → 保留本地缓存）
     const res = await apiFetch('/api/sessions');
     if (!res.ok) return;
     const data = await res.json();
-    sessions = data.sessions || [];
-    renderSessionList();
+    const apiSessions = data.sessions || [];
+    if (apiSessions.length > 0) {
+      sessions = apiSessions;
+      localStorage.setItem(SESSIONS_STORAGE, JSON.stringify(sessions));
+      renderSessionList();
+    }
   } catch {}
 }
 
@@ -2079,6 +2101,22 @@ function updateSessionListActive() {
   document.querySelectorAll('.session-item').forEach(item => {
     item.classList.toggle('active', item.dataset.id === currentSessionId);
   });
+}
+
+function upsertSessionInLocal(sessionId, problemStatement, currentStage) {
+  // 原子更新本地缓存中指定 session 的状态，不影响其他 session
+  try {
+    sessions = JSON.parse(localStorage.getItem(SESSIONS_STORAGE) || '[]');
+  } catch { sessions = []; }
+  const idx = sessions.findIndex(s => s.session_id === sessionId);
+  const entry = { session_id: sessionId, problem_statement: problemStatement, current_stage: currentStage };
+  if (idx >= 0) {
+    sessions[idx] = entry;
+  } else {
+    sessions.unshift(entry);
+  }
+  localStorage.setItem(SESSIONS_STORAGE, JSON.stringify(sessions));
+  renderSessionList();
 }
 
 async function loadSession(sessionId) {
@@ -2124,7 +2162,11 @@ async function deleteSession(sessionId) {
 }
 
 function updateSessionList() {
-  loadSessions();
+  // 只更新本地缓存，不调 API（serverless 无持久存储，会返回空）
+  try {
+    sessions = JSON.parse(localStorage.getItem(SESSIONS_STORAGE) || '[]');
+  } catch { sessions = []; }
+  renderSessionList();
 }
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
