@@ -12,7 +12,7 @@ from .ai_core import (
     backend_supports_model,
     _BACKEND_DEFAULT_MODEL,
 )
-from .prompt_engine import PromptEngine, WaterfallPromptEngine
+from .prompt_engine import PromptEngine, WaterfallPromptEngine, IterativeWaterfallEngine
 from .models_core import Message, Stage, ProblemSession
 from .session_store import SessionStore
 

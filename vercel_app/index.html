@@ -1079,6 +1079,26 @@ textarea, input { font-family: var(--font); }
   display: flex; align-items: center; gap: 8px;
 }
 
+.wf-iterative-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  margin-right: 4px;
+}
+.wf-iterative-toggle input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.wf-iterative-toggle span {
+  white-space: nowrap;
+}
+
 .wf-result {
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1390,8 +1410,12 @@ textarea, input { font-family: var(--font); }
         <textarea class="wf-input" id="wfQuestion" placeholder="例如：在 AI 时代，如何有效管理个人上下文？"></textarea>
         <textarea class="wf-input wf-context-input" id="wfContext" placeholder="补充背景（可选）：例如，我每天处理大量信息，但很难整合..."></textarea>
         <div class="wf-actions">
+          <label class="wf-iterative-toggle">
+            <input type="checkbox" id="wfIterative" checked />
+            <span>🧠 深化模式（AI自主迭代，更深入）</span>
+          </label>
           <button class="wf-submit" id="wfSubmit">⚡ 生成完整分析</button>
-          <div class="wf-loading" id="wfLoading" style="display:none;"><span>AI 思考中...</span></div>
+          <div class="wf-loading" id="wfLoading" style="display:none;"><span id="wfLoadingText">AI 思考中...</span></div>
           <button class="wf-submit" id="wfExportBtn" style="display:none;background:#16a34a;" type="button">📥 导出报告</button>
         </div>
       </div>
@@ -1878,6 +1902,9 @@ async function submitWaterfall() {
   const result = document.getElementById('wfResult');
   const exportBtn = document.getElementById('wfExportBtn');
 
+  const isIterative = document.getElementById('wfIterative').checked;
+  const loadingText = document.getElementById('wfLoadingText');
+  if (loadingText) loadingText.textContent = isIterative ? '🧠 AI 深化分析中，请稍候...' : 'AI 思考中...';
   btn.disabled = true;
   loading.style.display = 'flex';
   result.style.display = 'none';
@@ -1891,6 +1918,7 @@ async function submitWaterfall() {
         question,
         context: context ? { 补充背景: context } : null,
         backend: 'deepseek',
+        iterative: document.getElementById('wfIterative').checked,
       }),
     });
     const data = await res.json();

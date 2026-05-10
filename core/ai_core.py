@@ -48,6 +48,10 @@ class AIBackend(ABC):
     def supports_model(self, model_name: str) -> bool:
         pass
 
+    def generate_response(self, messages: List[Dict[str, str]], **kwargs) -> str:
+        """Wrapper: delegates to generate(). Added for interface compatibility with modules/ai_module.py"""
+        return self.generate(messages, **kwargs)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Claude

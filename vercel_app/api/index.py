@@ -23,6 +23,7 @@ from core import (
     get_available_backends,
     _BACKEND_DEFAULT_MODEL,
 )
+from core.prompt_engine import IterativeWaterfallEngine
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FastAPI app
@@ -43,6 +44,7 @@ app.add_middleware(
 
 _prompt_engine = PromptEngine()
 _waterfall_engine = WaterfallPromptEngine()
+_iterative_engine = IterativeWaterfallEngine()
 
 
 def _make_backend(backend: str, model: Optional[str] = None):
@@ -71,6 +73,7 @@ class WaterfallReq(BaseModel):
     context: Optional[Dict[str, Any]] = None
     backend: str = "deepseek"
     model: Optional[str] = None
+    iterative: bool = False  # 深化模式开关
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -218,15 +221,25 @@ def waterfall(req: WaterfallReq, request: Request):
         raise HTTPException(503, "AI 后端未配置或密钥无效")
 
     try:
-        prompt = _waterfall_engine.build_prompt(req.question, req.context)
-        system = _waterfall_engine.get_system_prompt()
-        result = backend.generate(
-            [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
-            max_tokens=6000,
-            temperature=0.7,
-            model=req.model,
-            api_key=user_key,
-        )
+        if req.iterative:
+            # 深化模式：多轮迭代收敛
+            result = _iterative_engine.run(
+                question=req.question,
+                backend=backend,
+                context=req.context,
+                max_tokens=6000,
+                progress_callback=None,
+            )
+        else:
+            # 快速模式：单次生成
+            prompt = _waterfall_engine.build_prompt(req.question, req.context)
+            system = _waterfall_engine.get_system_prompt()
+            result = backend.generate_response(
+                [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+                max_tokens=6000,
+                temperature=0.7,
+                model=req.model,
+            )
         return {"result": result, "question": req.question}
     except Exception as e:
         raise HTTPException(500, f"生成失败: {str(e)}")

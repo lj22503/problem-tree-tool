@@ -22,7 +22,11 @@ sys.path.append(str(Path(__file__).parent))
 from modules.ai_module import ProblemTreeAI
 from modules.models import ProblemSession, Message, Stage
 from modules.utils import save_session, load_session, list_sessions, export_markdown, delete_session, clear_all_sessions, get_stage_summary
-from modules.prompts_waterfall import WaterfallPromptEngine
+from core.prompt_engine import (
+    PromptEngine,
+    WaterfallPromptEngine,
+    IterativeWaterfallEngine,
+)
 
 # 加载环境变量
 load_dotenv()
@@ -244,6 +248,18 @@ elif st.session_state.mode == 'waterfall':
 
     # 初始化瀑布引擎
     waterfall_engine = WaterfallPromptEngine()
+    iterative_engine = IterativeWaterfallEngine()
+
+    # 深化模式开关
+    col_iter, col_mode = st.columns([3, 1])
+    with col_iter:
+        iterative_mode = st.checkbox(
+            "🧠 深化模式（AI自主迭代，类似DeepResearch）",
+            value=True,
+            help="开启后，AI会先扫描骨架、识别模糊点、再逐轮深挖，直到收敛才停止。比快速模式更深，但耗时更长。"
+        )
+    with col_mode:
+        st.caption("深化模式" if iterative_mode else "快速模式")
 
     # 问题输入
     st.subheader("输入你的问题")
@@ -266,37 +282,72 @@ elif st.session_state.mode == 'waterfall':
     # 生成按钮
     if st.button("🌊 生成完整分析", type="primary", key="btn_generate_waterfall"):
         if question:
-            with st.spinner("AI 正在生成完整分析框架，这可能需要 1-2 分钟..."):
+            # 初始化 AI 后端
+            if st.session_state.ai is None:
                 try:
-                    # 构建提示词
-                    context = {}
-                    if context_notes:
-                        context['额外说明'] = context_notes
-
-                    prompt = waterfall_engine.build_waterfall_prompt(question, context)
-                    system_prompt = waterfall_engine.get_system_prompt()
-
-                    # 调用 AI
-                    if st.session_state.ai is None:
-                        st.session_state.ai = ProblemTreeAI()
-
-                    messages = [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": prompt}
-                    ]
-
-                    from modules.ai_module import AIBackend
-                    backend = st.session_state.ai.current_backend
-                    if backend:
-                        result = backend.generate_response(messages, max_tokens=6000)
-                        st.session_state.waterfall_result = result
-                    else:
-                        st.error("AI 后端未初始化")
-                        st.stop()
-
+                    st.session_state.ai = ProblemTreeAI()
                 except Exception as e:
-                    st.error(f"生成失败：{e}")
+                    st.error(f"AI 初始化失败：{e}")
                     st.stop()
+
+            backend = st.session_state.ai.current_backend
+            if not backend:
+                st.error("AI 后端未初始化")
+                st.stop()
+
+            # 构建上下文
+            context = {}
+            if context_notes:
+                context['额外说明'] = context_notes
+
+            # 进度条区域
+            progress_area = st.container()
+
+            def progress_callback(round_num, stage, content):
+                """Streamlit 进度回调"""
+                with progress_area:
+                    if stage == "scanning":
+                        st.info("🔍 第1轮：快速扫描问题骨架...")
+                    elif stage == "scanner_done":
+                        st.success("✅ 骨架扫描完成，开始收敛判断...")
+                    elif stage == "judge":
+                        if "已收敛" in content:
+                            st.success("✅ AI判断：已收敛，输出最终报告")
+                        else:
+                            st.warning("⚠️ AI判断：还有未知点，继续深挖...")
+                    elif stage == "deepdiving":
+                        st.info(f"🔬 第{round_num}轮：深挖关键模糊点...")
+                    elif stage == "deepdiver_done":
+                        st.success(f"✅ 第{round_num}轮完成，继续收敛判断...")
+                    elif stage == "integrating":
+                        st.info("📝 整合所有轮次，生成最终报告...")
+
+            try:
+                if iterative_mode:
+                    # ── 深化模式 ────────────────────────────────────────
+                    with st.spinner("AI 正在深化分析，请稍候..."):
+                        result = iterative_engine.run(
+                            question=question,
+                            backend=backend,
+                            context=context,
+                            max_tokens=6000,
+                            progress_callback=progress_callback
+                        )
+                else:
+                    # ── 快速模式（原有逻辑）────────────────────────────
+                    with st.spinner("AI 正在生成完整分析框架，这可能需要 1-2 分钟..."):
+                        prompt = waterfall_engine.build_prompt(question, context)
+                        messages = [
+                            {"role": "system", "content": waterfall_engine.get_system_prompt()},
+                            {"role": "user", "content": prompt}
+                        ]
+                        result = backend.generate_response(messages, max_tokens=6000)
+
+                st.session_state.waterfall_result = result
+
+            except Exception as e:
+                st.error(f"生成失败：{e}")
+                st.stop()
 
             # 显示结果
             if st.session_state.waterfall_result:
