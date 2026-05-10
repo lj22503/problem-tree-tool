@@ -4,6 +4,7 @@
 """
 
 from typing import Dict, Any, Optional
+from core.gap_engine import GapDrivenEngine, JudgeResult
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -329,216 +330,134 @@ FINAL_INTEGRATION_TEMPLATE = """## 任务：整合最终报告
 """
 
 
-class IterativeWaterfallEngine:
+# ─────────────────────────────────────────────────────────────────────────────
+# YouxianMapEngine — 游刃 Map 实现，继承 GapDrivenEngine
+# ─────────────────────────────────────────────────────────────────────────────
+
+class YouxianMapEngine(GapDrivenEngine):
     """
-    迭代深化版瀑布引擎。
-
-    工作流程：
-    1. Scanner（第1轮）→ 快速扫描，产出骨架 + 标记未知点
-    2. 收敛判断 → AI 自检是否有显著未知点
-    3. 若未收敛 → DeepDiver（第2、3、...轮）→ 针对未知点深挖
-    4. 收敛后 → FinalIntegration → 输出完整报告
-
-    最大迭代轮次由 max_rounds 控制（默认3轮即停止，防止无限循环）。
+    游刃 Map 问题树引擎。
+    继承 GapDrivenEngine 通用骨架，注入游刃专属 prompt 模板。
     """
 
-    MAX_ROUNDS = 3  # 安全阀：最多迭代3轮深挖
+    _SYSTEM_PROMPT = ITERATIVE_WATERFALL_SYSTEM
 
-    def __init__(self):
-        self.system_prompt = ITERATIVE_WATERFALL_SYSTEM
+    _SCANNER_TEMPLATE = SCANNER_TEMPLATE  # 复用现有模板
 
-    def get_system_prompt(self) -> str:
-        return self.system_prompt
+    _JUDGE_TEMPLATE = """## 任务：收敛判断 + 生成候选深挖点
 
-    def build_scanner_prompt(self, question: str, context: Optional[Dict[str, Any]] = None) -> str:
+你是你自己。你刚刚完成了第 {round_num} 轮分析。
+
+**用户原始问题**：{question}
+
+**本轮分析内容**：
+{current_analysis}
+
+**已有知识积累**：
+{knowledge_summary}
+
+**gap 队列**：{gap_queue}
+
+## 判断标准
+
+满足以下任一条件，判定为「已收敛」：
+1. 核心问题定义清晰，解决方案具体可操作
+2. 所有关键模糊点都已被论证或明确标注为"开放问题"
+3. 再多一轮迭代，边际收益极低
+
+## 输出格式（JSON，必须包含 verdict, next_gaps, reason, knowledge_summary）
+
+```json
+{{
+  "verdict": "CONVERGED" | "CONTINUE",
+  "next_gaps": ["gap1", "gap2"] 或 [],
+  "reason": "判断理由（1-3句话）",
+  "knowledge_summary": "当前知识总结（200字以内）"
+}}
+```"""
+
+    _DEEPDIVER_TEMPLATE = DEEPDIVER_TEMPLATE  # 复用现有模板
+
+    _INTEGRATION_TEMPLATE = FINAL_INTEGRATION_TEMPLATE  # 复用现有模板
+
+    def _scan(
+        self,
+        question: str,
+        context: Optional[Dict[str, Any]],
+        backend,
+        max_tokens: int,
+    ) -> str:
         ctx_str = ""
         if context:
             ctx_str = "\n".join(f"- **{k}**: {v}" for k, v in context.items())
-        return SCANNER_TEMPLATE.format(
+        prompt = self._SCANNER_TEMPLATE.format(
             question=question,
-            context=ctx_str or "无"
+            context=ctx_str or "无",
         )
-
-    def build_convergence_judge_prompt(
-        self,
-        question: str,
-        current_round_content: str,
-        round_num: int,
-        history: str = ""
-    ) -> str:
-        return CONVERGENCE_JUDGE_TEMPLATE.format(
-            question=question,
-            analysis=current_round_content,
-            round_num=round_num,
-            history=history or "（首轮无历史记录）"
-        )
-
-    def build_deepdiver_prompt(
-        self,
-        question: str,
-        existing_analysis: str,
-        unknown_points: str,
-        round_num: int
-    ) -> str:
-        return DEEPDIVER_TEMPLATE.format(
-            question=question,
-            existing_analysis=existing_analysis,
-            unknown_points=unknown_points,
-            round_num=round_num
-        )
-
-    def build_final_integration_prompt(
-        self,
-        question: str,
-        all_rounds: str
-    ) -> str:
-        return FINAL_INTEGRATION_TEMPLATE.format(
-            question=question,
-            all_rounds=all_rounds
-        )
-
-    def run(
-        self,
-        question: str,
-        backend,  # AIBackend 实例
-        context: Optional[Dict[str, Any]] = None,
-        max_tokens: int = 6000,
-        progress_callback=None  # 可选：每轮结束后回调，用于 Streamlit 进度更新
-    ) -> str:
-        """
-        执行迭代深化流程。
-
-        Args:
-            question: 用户问题
-            backend: AIBackend 实例（如 ClaudeBackend）
-            context: 额外上下文
-            max_tokens: 每次生成的 max_tokens
-            progress_callback: fn(round_num, stage, content) 进度回调
-
-        Returns:
-            最终整合报告字符串
-        """
-        rounds = []  # 记录每轮的分析内容
-
-        # ── 第1轮：Scanner ──────────────────────────────────────────────
-        scanner_prompt = self.build_scanner_prompt(question, context)
-
-        if progress_callback:
-            progress_callback(0, "scanning", "")
-
         messages = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": scanner_prompt}
+            {"role": "system", "content": self._SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
         ]
-        scanner_result = backend.generate_response(messages, max_tokens=max_tokens)
-        rounds.append({"stage": "scanner", "content": scanner_result})
+        return backend.generate_response(messages, max_tokens=max_tokens)
 
-        if progress_callback:
-            progress_callback(1, "scanner_done", scanner_result)
+    def _judge(self, question: str, backend, max_tokens: int) -> JudgeResult:
+        knowledge_summary = self._summarize_knowledge()
+        gap_queue_str = "\n".join(f"- {g}" for g in self.gap_queue) if self.gap_queue else "（空）"
 
-        # ── 收敛判断（第1轮后）─────────────────────────────────────────
-        judge_prompt = self.build_convergence_judge_prompt(
+        # 获取当前轮次的分析内容（最后一条 knowledge）
+        current_analysis = self.knowledge[-1]["answer"] if self.knowledge else ""
+
+        prompt = self._JUDGE_TEMPLATE.format(
             question=question,
-            current_round_content=scanner_result,
-            round_num=1,
-            history=""
+            round_num=self._round,
+            current_analysis=current_analysis,
+            knowledge_summary=knowledge_summary,
+            gap_queue=gap_queue_str,
         )
-        judge_messages = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": judge_prompt}
+        messages = [
+            {"role": "system", "content": self._SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
         ]
-        judge_result = backend.generate_response(judge_messages, max_tokens=500)
-        converged = "已收敛" in judge_result and "未收敛" not in judge_result
+        result = backend.generate_response(messages, max_tokens=max_tokens)
+        return JudgeResult.from_json_str(result)
 
-        if progress_callback:
-            progress_callback(1, "judge", judge_result)
-
-        # ── 第2、3轮：DeepDiver（若需要）────────────────────────────────
-        round_num = 2
-        while not converged and round_num <= self.MAX_ROUNDS:
-            # 从判断结果中提取下一个要深挖的点
-            # judge_result 里最后一行应该是 "如果未收敛，明确说出下一个最需要深挖的点是什么：..."
-            unknown_points = self._extract_unknown_points(judge_result)
-
-            if not unknown_points.strip():
-                # 提取失败，默认使用 scanner_result 中的模糊点描述
-                unknown_points = "基于上一轮分析，选择最关键的一个模糊点进行深挖。"
-
-            deepdiver_prompt = self.build_deepdiver_prompt(
-                question=question,
-                existing_analysis=scanner_result + "\n\n---\n\n历史轮次：\n" + "\n\n---\n\n".join(
-                    f"【第{r['stage']}】" + r["content"] for r in rounds
-                ),
-                unknown_points=unknown_points,
-                round_num=round_num
-            )
-
-            if progress_callback:
-                progress_callback(round_num, "deepdiving", "")
-
-            deepdiver_messages = [
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": deepdiver_prompt}
-            ]
-            deepdiver_result = backend.generate_response(deepdiver_messages, max_tokens=max_tokens)
-            rounds.append({"stage": f"deepdiver_r{round_num}", "content": deepdiver_result})
-
-            if progress_callback:
-                progress_callback(round_num, "deepdiver_done", deepdiver_result)
-
-            # 再次收敛判断
-            history_str = "\n\n".join(
-                f"【第{round_num}轮 - {r['stage']}】\n{r['content']}"
-                for round_num, r in enumerate(rounds, 1)
-            )
-            judge_prompt_2 = self.build_convergence_judge_prompt(
-                question=question,
-                current_round_content=deepdiver_result,
-                round_num=round_num,
-                history=history_str
-            )
-            judge_messages_2 = [
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": judge_prompt_2}
-            ]
-            judge_result_2 = backend.generate_response(judge_messages_2, max_tokens=500)
-            converged = "已收敛" in judge_result_2 and "未收敛" not in judge_result_2
-
-            if progress_callback:
-                progress_callback(round_num, "judge", judge_result_2)
-
-            round_num += 1
-
-        # ── 最终整合 ──────────────────────────────────────────────────────
-        if progress_callback:
-            progress_callback(round_num - 1, "integrating", "")
-
-        all_rounds_str = "\n\n".join(
-            f"=== 【第{round_num}轮 - {r['stage']}】 ===\n{r['content']}"
-            for round_num, r in enumerate(rounds, 1)
-        )
-        integration_prompt = self.build_final_integration_prompt(
+    def _deepdive(
+        self,
+        question: str,
+        current_gap: str,
+        backend,
+        max_tokens: int,
+    ) -> str:
+        existing = self._format_knowledge()
+        prompt = self._DEEPDIVER_TEMPLATE.format(
             question=question,
-            all_rounds=all_rounds_str
+            existing_analysis=existing,
+            unknown_points=current_gap,
+            round_num=self._round,
         )
-        integration_messages = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": integration_prompt}
+        messages = [
+            {"role": "system", "content": self._SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
         ]
-        final_report = backend.generate_response(integration_messages, max_tokens=max_tokens)
+        return backend.generate_response(messages, max_tokens=max_tokens)
 
-        if progress_callback:
-            progress_callback(round_num - 1, "done", final_report)
+    def _integrate(self, question: str, backend, max_tokens: int) -> str:
+        all_rounds = "\n\n".join(
+            f"=== 【第{k['round']}轮 - {k['stage']}】===\n{k['answer']}"
+            for k in self.knowledge
+        )
+        prompt = self._INTEGRATION_TEMPLATE.format(
+            question=question,
+            all_rounds=all_rounds,
+        )
+        messages = [
+            {"role": "system", "content": self._SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ]
+        return backend.generate_response(messages, max_tokens=max_tokens)
 
-        return final_report
 
-    def _extract_unknown_points(self, judge_result: str) -> str:
-        """从收敛判断结果中提取下一个要深挖的点。"""
-        lines = judge_result.strip().split("\n")
-        # 找包含"下一个最需要深挖"或"如果未收敛"那一行
-        for i, line in enumerate(lines):
-            if "下一个最需要深挖" in line or ("未收敛" in line and "点" in line):
-                # 收集后面几行作为 unknown_points
-                return "\n".join(lines[i:]).strip()
-        # 回退：返回 judge_result 最后 200 字
-        return judge_result[-500:].strip()
+# ─────────────────────────────────────────────────────────────────────────────
+# 兼容性别名
+# ─────────────────────────────────────────────────────────────────────────────
+IterativeWaterfallEngine = YouxianMapEngine

@@ -13,7 +13,13 @@ from .ai_core import (
     _BACKEND_DEFAULT_MODEL,
     ConvergenceJudge,
 )
-from .prompt_engine import PromptEngine, WaterfallPromptEngine, IterativeWaterfallEngine
+from .gap_engine import GapDrivenEngine, JudgeResult
+from .prompt_engine import (
+    PromptEngine,
+    WaterfallPromptEngine,
+    YouxianMapEngine,
+    IterativeWaterfallEngine,
+)
 from .models_core import Message, Stage, ProblemSession
 from .session_store import SessionStore
 
@@ -28,10 +34,13 @@ __all__ = [
     "_BACKEND_DEFAULT_MODEL",
     "PromptEngine",
     "WaterfallPromptEngine",
+    "YouxianMapEngine",
     "IterativeWaterfallEngine",
     "Message",
     "Stage",
     "ProblemSession",
     "SessionStore",
     "ConvergenceJudge",
+    "GapDrivenEngine",
+    "JudgeResult",
 ]
